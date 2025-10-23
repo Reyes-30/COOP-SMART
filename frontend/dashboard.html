@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - COOP-SMART</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">🏦</span>
+                <span class="logo-text">COOP-SMART</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <span class="toggle-icon">☰</span>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item active">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="socios.html" class="nav-item">
+                <span class="nav-icon">👥</span>
+                <span class="nav-text">Socios</span>
+            </a>
+            <a href="cuentas.html" class="nav-item">
+                <span class="nav-icon">💰</span>
+                <span class="nav-text">Cuentas</span>
+            </a>
+            <a href="prestamos.html" class="nav-item">
+                <span class="nav-icon">💳</span>
+                <span class="nav-text">Préstamos</span>
+            </a>
+            <a href="transacciones.html" class="nav-item">
+                <span class="nav-icon">🔄</span>
+                <span class="nav-text">Transacciones</span>
+            </a>
+            <a href="pagos.html" class="nav-item">
+                <span class="nav-icon">💵</span>
+                <span class="nav-text">Pagos</span>
+            </a>
+            <a href="reportes.html" class="nav-item">
+                <span class="nav-icon">📈</span>
+                <span class="nav-text">Reportes</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">👤</div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Admin</div>
+                    <div class="user-role" id="userRole">Administrador</div>
+                </div>
+            </div>
+            <button class="logout-btn" id="logoutBtn">
+                <span class="logout-icon">🚪</span>
+                <span class="logout-text">Cerrar Sesión</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <span class="menu-icon">☰</span>
+                </button>
+                <h1 class="page-title">Dashboard</h1>
+            </div>
+            <div class="header-right">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Buscar..." class="search-input">
+                </div>
+                <button class="notification-btn">
+                    <span class="notification-icon">🔔</span>
+                    <span class="notification-badge">3</span>
+                </button>
+                <div class="header-user">
+                    <div class="header-avatar">👤</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- KPI Cards -->
+        <section class="kpi-section">
+            <div class="kpi-card kpi-blue">
+                <div class="kpi-icon">👥</div>
+                <div class="kpi-content">
+                    <h3 class="kpi-label">Total Socios</h3>
+                    <p class="kpi-value" id="totalSocios">0</p>
+                    <span class="kpi-change positive">+12% este mes</span>
+                </div>
+            </div>
+
+            <div class="kpi-card kpi-green">
+                <div class="kpi-icon">💰</div>
+                <div class="kpi-content">
+                    <h3 class="kpi-label">Saldo Total</h3>
+                    <p class="kpi-value" id="saldoTotal">$0.00</p>
+                    <span class="kpi-change positive">+8% este mes</span>
+                </div>
+            </div>
+
+            <div class="kpi-card kpi-purple">
+                <div class="kpi-icon">💳</div>
+                <div class="kpi-content">
+                    <h3 class="kpi-label">Préstamos Activos</h3>
+                    <p class="kpi-value" id="prestamosActivos">0</p>
+                    <span class="kpi-change negative">-3% este mes</span>
+                </div>
+            </div>
+
+            <div class="kpi-card kpi-orange">
+                <div class="kpi-icon">🔄</div>
+                <div class="kpi-content">
+                    <h3 class="kpi-label">Transacciones Hoy</h3>
+                    <p class="kpi-value" id="transaccionesHoy">0</p>
+                    <span class="kpi-change positive">+24% hoy</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="charts-section">
+            <div class="chart-card chart-large">
+                <div class="chart-header">
+                    <h2 class="chart-title">Movimientos Mensuales</h2>
+                    <div class="chart-controls">
+                        <button class="chart-btn active">Mensual</button>
+                        <button class="chart-btn">Semanal</button>
+                        <button class="chart-btn">Diario</button>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card chart-small">
+                <div class="chart-header">
+                    <h2 class="chart-title">Distribución de Cuentas</h2>
+                </div>
+                <div class="chart-body">
+                    <canvas id="accountsChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Transactions -->
+        <section class="transactions-section">
+            <div class="section-header">
+                <h2 class="section-title">Transacciones Recientes</h2>
+                <a href="transacciones.html" class="section-link">Ver todas →</a>
+            </div>
+
+            <div class="table-container">
+                <table class="transactions-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Socio</th>
+                            <th>Tipo</th>
+                            <th>Cuenta</th>
+                            <th>Monto</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsBody">
+                        <tr class="loading-row">
+                            <td colspan="8">
+                                <div class="loading-spinner"></div>
+                                <p>Cargando transacciones...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Quick Actions -->
+        <section class="quick-actions">
+            <h2 class="section-title">Acciones Rápidas</h2>
+            <div class="actions-grid">
+                <button class="action-btn action-blue">
+                    <span class="action-icon">👤</span>
+                    <span class="action-text">Nuevo Socio</span>
+                </button>
+                <button class="action-btn action-green">
+                    <span class="action-icon">💰</span>
+                    <span class="action-text">Nueva Cuenta</span>
+                </button>
+                <button class="action-btn action-purple">
+                    <span class="action-icon">💳</span>
+                    <span class="action-text">Nuevo Préstamo</span>
+                </button>
+                <button class="action-btn action-orange">
+                    <span class="action-icon">🔄</span>
+                    <span class="action-text">Nueva Transacción</span>
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socios y Clientes - COOP-SMART</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="socios.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">🏦</span>
+                <span class="logo-text">COOP-SMART</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <span class="toggle-icon">☰</span>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="socios.html" class="nav-item active">
+                <span class="nav-icon">👥</span>
+                <span class="nav-text">Socios/Clientes</span>
+            </a>
+            <a href="cuentas.html" class="nav-item">
+                <span class="nav-icon">💰</span>
+                <span class="nav-text">Cuentas</span>
+            </a>
+            <a href="prestamos.html" class="nav-item">
+                <span class="nav-icon">💳</span>
+                <span class="nav-text">Préstamos</span>
+            </a>
+            <a href="transacciones.html" class="nav-item">
+                <span class="nav-icon">🔄</span>
+                <span class="nav-text">Transacciones</span>
+            </a>
+            <a href="pagos.html" class="nav-item">
+                <span class="nav-icon">💵</span>
+                <span class="nav-text">Pagos</span>
+            </a>
+            <a href="reportes.html" class="nav-item">
+                <span class="nav-icon">📈</span>
+                <span class="nav-text">Reportes</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">👤</div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Admin</div>
+                    <div class="user-role" id="userRole">Administrador</div>
+                </div>
+            </div>
+            <button class="logout-btn" id="logoutBtn">
+                <span class="logout-icon">🚪</span>
+                <span class="logout-text">Cerrar Sesión</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <span class="menu-icon">☰</span>
+                </button>
+                <h1 class="page-title">Socios y Clientes</h1>
+            </div>
+            <div class="header-right">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Buscar..." class="search-input" id="globalSearch">
+                </div>
+                <button class="notification-btn">
+                    <span class="notification-icon">🔔</span>
+                    <span class="notification-badge">3</span>
+                </button>
+                <div class="header-user">
+                    <div class="header-avatar">👤</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <section class="stats-grid">
+            <div class="stat-card stat-blue">
+                <div class="stat-icon">👥</div>
+                <div class="stat-content">
+                    <h3 class="stat-label">Total Socios</h3>
+                    <p class="stat-value" id="totalSocios">0</p>
+                </div>
+            </div>
+            <div class="stat-card stat-gray">
+                <div class="stat-icon">👤</div>
+                <div class="stat-content">
+                    <h3 class="stat-label">Total Clientes</h3>
+                    <p class="stat-value" id="totalClientes">0</p>
+                </div>
+            </div>
+            <div class="stat-card stat-green">
+                <div class="stat-icon">✅</div>
+                <div class="stat-content">
+                    <h3 class="stat-label">Activos</h3>
+                    <p class="stat-value" id="totalActivos">0</p>
+                </div>
+            </div>
+            <div class="stat-card stat-orange">
+                <div class="stat-icon">📅</div>
+                <div class="stat-content">
+                    <h3 class="stat-label">Nuevos este mes</h3>
+                    <p class="stat-value" id="nuevosMes">0</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filters and Actions -->
+        <section class="toolbar">
+            <div class="toolbar-left">
+                <div class="filter-group">
+                    <button class="filter-btn active" data-filter="todos">
+                        Todos <span class="filter-count" id="countTodos">0</span>
+                    </button>
+                    <button class="filter-btn" data-filter="socio">
+                        👥 Socios <span class="filter-count" id="countSocios">0</span>
+                    </button>
+                    <button class="filter-btn" data-filter="cliente">
+                        👤 Clientes <span class="filter-count" id="countClientes">0</span>
+                    </button>
+                </div>
+                <div class="filter-group">
+                    <select class="filter-select" id="estadoFilter">
+                        <option value="todos">Todos los estados</option>
+                        <option value="activo">Activos</option>
+                        <option value="inactivo">Inactivos</option>
+                        <option value="suspendido">Suspendidos</option>
+                    </select>
+                </div>
+            </div>
+            <div class="toolbar-right">
+                <button class="btn-secondary" id="btnExportar">
+                    <span class="btn-icon">📥</span>
+                    Exportar
+                </button>
+                <button class="btn-primary" id="btnNuevo">
+                    <span class="btn-icon">➕</span>
+                    Nuevo Registro
+                </button>
+            </div>
+        </section>
+
+        <!-- Table -->
+        <section class="table-section">
+            <div class="table-container">
+                <table class="data-table" id="sociosTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Identidad</th>
+                            <th>Nombre Completo</th>
+                            <th>Tipo</th>
+                            <th>Teléfono</th>
+                            <th>Email</th>
+                            <th>Fecha Ingreso</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sociosTableBody">
+                        <tr class="loading-row">
+                            <td colspan="9">
+                                <div class="loading-spinner"></div>
+                                <p>Cargando datos...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal: Nuevo/Editar Socio -->
+    <div class="modal" id="modalSocio">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Nuevo Socio/Cliente</h2>
+                <button class="modal-close" id="btnCloseModal">✕</button>
+            </div>
+            <form id="formSocio">
+                <div class="modal-body">
+                    <!-- Tipo de Registro -->
+                    <div class="form-section">
+                        <h3 class="section-title">Tipo de Registro</h3>
+                        <div class="radio-group">
+                            <label class="radio-card">
+                                <input type="radio" name="tipo" value="socio" checked>
+                                <div class="radio-content">
+                                    <span class="radio-icon">👥</span>
+                                    <span class="radio-label">Socio</span>
+                                    <span class="radio-description">Miembro de la cooperativa</span>
+                                </div>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="tipo" value="cliente">
+                                <div class="radio-content">
+                                    <span class="radio-icon">👤</span>
+                                    <span class="radio-label">Cliente</span>
+                                    <span class="radio-description">Usuario externo</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Datos Personales -->
+                    <div class="form-section">
+                        <h3 class="section-title">Datos Personales</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="identidad">Número de Identidad *</label>
+                                <input type="text" id="identidad" name="identidad" required 
+                                       placeholder="0000-0000-00000" maxlength="15">
+                            </div>
+                            <div class="form-group">
+                                <label for="nombre">Nombre *</label>
+                                <input type="text" id="nombre" name="nombre" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="apellido">Apellido *</label>
+                                <input type="text" id="apellido" name="apellido" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="fecha_nacimiento">Fecha de Nacimiento *</label>
+                                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="genero">Género *</label>
+                                <select id="genero" name="genero" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="M">Masculino</option>
+                                    <option value="F">Femenino</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información de Contacto -->
+                    <div class="form-section">
+                        <h3 class="section-title">Información de Contacto</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="telefono">Teléfono *</label>
+                                <input type="tel" id="telefono" name="telefono" required 
+                                       placeholder="0000-0000">
+                            </div>
+                            <div class="form-group">
+                                <label for="celular">Celular</label>
+                                <input type="tel" id="celular" name="celular" 
+                                       placeholder="0000-0000">
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" name="email" 
+                                       placeholder="correo@ejemplo.com">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dirección -->
+                    <div class="form-section">
+                        <h3 class="section-title">Dirección</h3>
+                        <div class="form-grid">
+                            <div class="form-group form-group-full">
+                                <label for="direccion">Dirección Completa *</label>
+                                <textarea id="direccion" name="direccion" required rows="2"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="ciudad">Ciudad *</label>
+                                <input type="text" id="ciudad" name="ciudad" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="departamento">Departamento *</label>
+                                <select id="departamento" name="departamento" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Atlántida">Atlántida</option>
+                                    <option value="Colón">Colón</option>
+                                    <option value="Comayagua">Comayagua</option>
+                                    <option value="Copán">Copán</option>
+                                    <option value="Cortés">Cortés</option>
+                                    <option value="Choluteca">Choluteca</option>
+                                    <option value="El Paraíso">El Paraíso</option>
+                                    <option value="Francisco Morazán">Francisco Morazán</option>
+                                    <option value="Gracias a Dios">Gracias a Dios</option>
+                                    <option value="Intibucá">Intibucá</option>
+                                    <option value="Islas de la Bahía">Islas de la Bahía</option>
+                                    <option value="La Paz">La Paz</option>
+                                    <option value="Lempira">Lempira</option>
+                                    <option value="Ocotepeque">Ocotepeque</option>
+                                    <option value="Olancho">Olancho</option>
+                                    <option value="Santa Bárbara">Santa Bárbara</option>
+                                    <option value="Valle">Valle</option>
+                                    <option value="Yoro">Yoro</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información Laboral -->
+                    <div class="form-section">
+                        <h3 class="section-title">Información Laboral</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="ocupacion">Ocupación</label>
+                                <input type="text" id="ocupacion" name="ocupacion">
+                            </div>
+                            <div class="form-group">
+                                <label for="lugar_trabajo">Lugar de Trabajo</label>
+                                <input type="text" id="lugar_trabajo" name="lugar_trabajo">
+                            </div>
+                            <div class="form-group">
+                                <label for="ingresos_mensuales">Ingresos Mensuales (L.)</label>
+                                <input type="number" id="ingresos_mensuales" name="ingresos_mensuales" 
+                                       step="0.01" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campos adicionales para Socios -->
+                    <div class="form-section" id="seccionSocio">
+                        <h3 class="section-title">Información de Socio</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="fecha_ingreso">Fecha de Ingreso *</label>
+                                <input type="date" id="fecha_ingreso" name="fecha_ingreso" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="aportacion_inicial">Aportación Inicial (L.) *</label>
+                                <input type="number" id="aportacion_inicial" step="0.01" min="0" 
+                                       placeholder="500.00">
+                            </div>
+                        </div>
+                        <div class="info-box info-blue">
+                            <span class="info-icon">ℹ️</span>
+                            <div>
+                                <strong>Beneficios de Socio:</strong>
+                                <p>Tasas preferenciales, dividendos anuales, derecho a voto en asambleas</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notas -->
+                    <div class="form-section">
+                        <h3 class="section-title">Notas Adicionales</h3>
+                        <div class="form-group">
+                            <textarea id="notas" name="notas" rows="3" 
+                                      placeholder="Información adicional relevante..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="btnCancelar">Cancelar</button>
+                    <button type="submit" class="btn-primary">
+                        <span class="btn-icon">💾</span>
+                        Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Ver Detalles -->
+    <div class="modal" id="modalDetalles">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 class="modal-title">Detalles del Socio/Cliente</h2>
+                <button class="modal-close" id="btnCloseDetalles">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="details-header">
+                    <div class="details-avatar">👤</div>
+                    <div class="details-info">
+                        <h3 id="detallesNombre">---</h3>
+                        <p id="detallesIdentidad">---</p>
+                        <div class="details-badges">
+                            <span class="badge" id="detallesTipo">---</span>
+                            <span class="badge" id="detallesEstado">---</span>
+                        </div>
+                    </div>
+                    <div class="details-actions">
+                        <button class="btn-icon-action" id="btnEditarDetalles" title="Editar">✏️</button>
+                        <button class="btn-icon-action" id="btnImprimirDetalles" title="Imprimir">🖨️</button>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="personal">Datos Personales</button>
+                    <button class="tab-btn" data-tab="cuentas">Cuentas</button>
+                    <button class="tab-btn" data-tab="prestamos">Préstamos</button>
+                    <button class="tab-btn" data-tab="historial">Historial</button>
+                </div>
+
+                <div class="tab-content active" id="tabPersonal">
+                    <div class="details-grid" id="detallesPersonales">
+                        <!-- Se llenará dinámicamente -->
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tabCuentas">
+                    <p class="tab-placeholder">Cargando cuentas...</p>
+                </div>
+
+                <div class="tab-content" id="tabPrestamos">
+                    <p class="tab-placeholder">Cargando préstamos...</p>
+                </div>
+
+                <div class="tab-content" id="tabHistorial">
+                    <p class="tab-placeholder">Cargando historial...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+    <script src="socios.js"></script>
+</body>
+</html>
