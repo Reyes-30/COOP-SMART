@@ -6,7 +6,9 @@
 // ===================================
 // Configuración API
 // ===================================
-const API_URL = 'http://localhost:3000';
+const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000' 
+    : 'https://coop-smart.vercel.app';
 let currentFilter = 'todos';
 let currentEstadoFilter = 'todos';
 let sociosData = [];
