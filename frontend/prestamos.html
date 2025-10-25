@@ -4,79 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Préstamos - COOP-SMART</title>
-    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="pagos.css">
     <link rel="stylesheet" href="prestamos.css">
 </head>
 <body>
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">
-                <span class="logo-icon">🏦</span>
-                <span class="logo-text">COOP-SMART</span>
-            </div>
-            <button class="sidebar-toggle" id="sidebarToggle">
-                <span class="toggle-icon">☰</span>
-            </button>
-        </div>
-
-        <nav class="sidebar-nav">
-            <a href="dashboard.html" class="nav-item">
-                <span class="nav-icon">📊</span>
-                <span class="nav-text">Dashboard</span>
-            </a>
-            <a href="socios.html" class="nav-item">
-                <span class="nav-icon">👥</span>
-                <span class="nav-text">Socios/Clientes</span>
-            </a>
-            <a href="cuentas.html" class="nav-item">
-                <span class="nav-icon">💰</span>
-                <span class="nav-text">Cuentas</span>
-            </a>
-            <a href="prestamos.html" class="nav-item active">
-                <span class="nav-icon">💳</span>
-                <span class="nav-text">Préstamos</span>
-            </a>
-            <a href="transacciones.html" class="nav-item">
-                <span class="nav-icon">🔄</span>
-                <span class="nav-text">Transacciones</span>
-            </a>
-            <a href="pagos.html" class="nav-item">
-                <span class="nav-icon">💵</span>
-                <span class="nav-text">Pagos</span>
-            </a>
-            <a href="reportes.html" class="nav-item">
-                <span class="nav-icon">📈</span>
-                <span class="nav-text">Reportes</span>
-            </a>
-        </nav>
-
-        <div class="sidebar-footer">
-            <div class="user-info">
-                <div class="user-avatar">👤</div>
-                <div class="user-details">
-                    <div class="user-name" id="userName">Admin</div>
-                    <div class="user-role" id="userRole">Administrador</div>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-icon">💰</div>
+                <div>
+                    <h1 class="logo-text">COOP-SMART</h1>
+                    <p class="logo-subtitle">Sistema de Gestión Cooperativa</p>
                 </div>
             </div>
-            <button class="logout-btn" id="logoutBtn">
-                <span class="logout-icon">🚪</span>
-                <span class="logout-text">Cerrar Sesión</span>
-            </button>
+            
+            <div class="header-search">
+                <input type="text" id="globalSearch" placeholder="Buscar por préstamo, socio, referencia..." class="search-input">
+                <span class="search-icon">�</span>
+            </div>
+            
+            <div class="user-menu">
+                <div class="user-info">
+                    <span class="user-name" id="userName">Admin</span>
+                    <span class="user-role" id="userRole">Administrador</span>
+                </div>
+                <button class="logout-btn" id="logoutBtn">
+                    <span>�</span> Salir
+                </button>
+            </div>
         </div>
-    </aside>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav-menu">
+        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+        <a href="socios.html" class="nav-link">👥 Socios</a>
+        <a href="cuentas.html" class="nav-link">� Cuentas</a>
+        <a href="prestamos.html" class="nav-link active">💵 Préstamos</a>
+        <a href="transacciones.html" class="nav-link">📝 Transacciones</a>
+        <a href="pagos.html" class="nav-link">💸 Pagos</a>
+        <a href="reportes.html" class="nav-link">📈 Reportes</a>
+    </nav>
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-left">
-                <button class="mobile-menu-btn" id="mobileMenuBtn">
-                    <span class="menu-icon">☰</span>
-                </button>
-                <h1 class="page-title">Gestión de Préstamos</h1>
+        <div class="page-header">
+            <div>
+                <h2 class="page-title">💵 Gestión de Préstamos</h2>
+                <p class="page-subtitle">Administración de préstamos y solicitudes</p>
             </div>
-            <div class="header-right">
+            <button class="btn-primary" id="btnNuevoPrestamo">
+                <span>➕</span> Nuevo Préstamo
+            </button>
+        </div>
+
+        <!-- Inicio del contenido -->
+        <div class="header-right">
                 <div class="search-box">
                     <span class="search-icon">🔍</span>
                     <input type="text" placeholder="Buscar préstamo..." class="search-input" id="globalSearch">

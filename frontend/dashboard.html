@@ -4,212 +4,181 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - COOP-SMART</title>
-    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="pagos.css">
 </head>
 <body>
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">
-                <span class="logo-icon">🏦</span>
-                <span class="logo-text">COOP-SMART</span>
-            </div>
-            <button class="sidebar-toggle" id="sidebarToggle">
-                <span class="toggle-icon">☰</span>
-            </button>
-        </div>
-
-        <nav class="sidebar-nav">
-            <a href="dashboard.html" class="nav-item active">
-                <span class="nav-icon">📊</span>
-                <span class="nav-text">Dashboard</span>
-            </a>
-            <a href="socios.html" class="nav-item">
-                <span class="nav-icon">👥</span>
-                <span class="nav-text">Socios</span>
-            </a>
-            <a href="cuentas.html" class="nav-item">
-                <span class="nav-icon">💰</span>
-                <span class="nav-text">Cuentas</span>
-            </a>
-            <a href="prestamos.html" class="nav-item">
-                <span class="nav-icon">💳</span>
-                <span class="nav-text">Préstamos</span>
-            </a>
-            <a href="transacciones.html" class="nav-item">
-                <span class="nav-icon">🔄</span>
-                <span class="nav-text">Transacciones</span>
-            </a>
-            <a href="pagos.html" class="nav-item">
-                <span class="nav-icon">💵</span>
-                <span class="nav-text">Pagos</span>
-            </a>
-            <a href="reportes.html" class="nav-item">
-                <span class="nav-icon">📈</span>
-                <span class="nav-text">Reportes</span>
-            </a>
-        </nav>
-
-        <div class="sidebar-footer">
-            <div class="user-info">
-                <div class="user-avatar">👤</div>
-                <div class="user-details">
-                    <div class="user-name" id="userName">Admin</div>
-                    <div class="user-role" id="userRole">Administrador</div>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-icon">💰</div>
+                <div>
+                    <h1 class="logo-text">COOP-SMART</h1>
+                    <p class="logo-subtitle">Sistema de Gestión Cooperativa</p>
                 </div>
             </div>
-            <button class="logout-btn" id="logoutBtn">
-                <span class="logout-icon">🚪</span>
-                <span class="logout-text">Cerrar Sesión</span>
-            </button>
+            
+            <div class="header-search">
+                <input type="text" id="globalSearch" placeholder="Buscar por préstamo, socio, referencia..." class="search-input">
+                <span class="search-icon">�</span>
+            </div>
+            
+            <div class="user-menu">
+                <div class="user-info">
+                    <span class="user-name" id="userName">Admin</span>
+                    <span class="user-role" id="userRole">Administrador</span>
+                </div>
+                <button class="logout-btn" id="logoutBtn">
+                    <span>🚪</span> Salir
+                </button>
+            </div>
         </div>
-    </aside>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav-menu">
+        <a href="dashboard.html" class="nav-link active">📊 Dashboard</a>
+        <a href="socios.html" class="nav-link">👥 Socios</a>
+        <a href="cuentas.html" class="nav-link">💳 Cuentas</a>
+        <a href="prestamos.html" class="nav-link">💵 Préstamos</a>
+        <a href="transacciones.html" class="nav-link">📝 Transacciones</a>
+        <a href="pagos.html" class="nav-link">� Pagos</a>
+        <a href="reportes.html" class="nav-link">📈 Reportes</a>
+    </nav>
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-left">
-                <button class="mobile-menu-btn" id="mobileMenuBtn">
-                    <span class="menu-icon">☰</span>
-                </button>
-                <h1 class="page-title">Dashboard</h1>
+        <div class="page-header">
+            <div>
+                <h2 class="page-title">📊 Dashboard</h2>
+                <p class="page-subtitle">Panel de control y métricas principales del sistema</p>
             </div>
-            <div class="header-right">
-                <div class="search-box">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" placeholder="Buscar..." class="search-input">
-                </div>
-                <button class="notification-btn">
-                    <span class="notification-icon">🔔</span>
-                    <span class="notification-badge">3</span>
-                </button>
-                <div class="header-user">
-                    <div class="header-avatar">👤</div>
-                </div>
-            </div>
-        </header>
+        </div>
 
-        <!-- KPI Cards -->
-        <section class="kpi-section">
-            <div class="kpi-card kpi-blue">
-                <div class="kpi-icon">👥</div>
-                <div class="kpi-content">
-                    <h3 class="kpi-label">Total Socios</h3>
-                    <p class="kpi-value" id="totalSocios">0</p>
-                    <span class="kpi-change positive">+12% este mes</span>
+        <!-- Estadísticas -->
+        <div class="stats-grid">
+            <div class="stat-card stat-blue">
+                <div class="stat-icon">👥</div>
+                <div class="stat-info">
+                    <div class="stat-label">Total Socios</div>
+                    <div class="stat-value" id="totalSocios">0</div>
+                    <div class="stat-count" id="countSocios">0 activos</div>
                 </div>
             </div>
-
-            <div class="kpi-card kpi-green">
-                <div class="kpi-icon">💰</div>
-                <div class="kpi-content">
-                    <h3 class="kpi-label">Saldo Total</h3>
-                    <p class="kpi-value" id="saldoTotal">$0.00</p>
-                    <span class="kpi-change positive">+8% este mes</span>
+            
+            <div class="stat-card stat-green">
+                <div class="stat-icon">💰</div>
+                <div class="stat-info">
+                    <div class="stat-label">Saldo Total</div>
+                    <div class="stat-value" id="saldoTotal">L. 0.00</div>
+                    <div class="stat-count" id="countCuentas">0 cuentas</div>
                 </div>
             </div>
-
-            <div class="kpi-card kpi-purple">
-                <div class="kpi-icon">💳</div>
-                <div class="kpi-content">
-                    <h3 class="kpi-label">Préstamos Activos</h3>
-                    <p class="kpi-value" id="prestamosActivos">0</p>
-                    <span class="kpi-change negative">-3% este mes</span>
+            
+            <div class="stat-card stat-orange">
+                <div class="stat-icon">�</div>
+                <div class="stat-info">
+                    <div class="stat-label">Préstamos Activos</div>
+                    <div class="stat-value" id="prestamosActivos">0</div>
+                    <div class="stat-count" id="montoTotal">L. 0.00 total</div>
                 </div>
             </div>
-
-            <div class="kpi-card kpi-orange">
-                <div class="kpi-icon">🔄</div>
-                <div class="kpi-content">
-                    <h3 class="kpi-label">Transacciones Hoy</h3>
-                    <p class="kpi-value" id="transaccionesHoy">0</p>
-                    <span class="kpi-change positive">+24% hoy</span>
+            
+            <div class="stat-card stat-purple">
+                <div class="stat-icon">�</div>
+                <div class="stat-info">
+                    <div class="stat-label">Transacciones Hoy</div>
+                    <div class="stat-value" id="transaccionesHoy">0</div>
+                    <div class="stat-count" id="montoHoy">L. 0.00 movido</div>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- Charts Section -->
-        <section class="charts-section">
-            <div class="chart-card chart-large">
-                <div class="chart-header">
-                    <h2 class="chart-title">Movimientos Mensuales</h2>
-                    <div class="chart-controls">
-                        <button class="chart-btn active">Mensual</button>
-                        <button class="chart-btn">Semanal</button>
-                        <button class="chart-btn">Diario</button>
-                    </div>
+        <!-- Gráficas -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+            <div class="card">
+                <div class="card-header">
+                    <h3>📈 Movimientos Mensuales</h3>
                 </div>
-                <div class="chart-body">
-                    <canvas id="monthlyChart"></canvas>
+                <div style="padding: 2rem; text-align: center; color: #6B7280;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
+                    <p>Gráfico de movimientos mensuales</p>
+                    <p style="font-size: 0.85rem;">(Se implementará con Chart.js)</p>
                 </div>
             </div>
 
-            <div class="chart-card chart-small">
-                <div class="chart-header">
-                    <h2 class="chart-title">Distribución de Cuentas</h2>
+            <div class="card">
+                <div class="card-header">
+                    <h3>🥧 Distribución de Cuentas</h3>
                 </div>
-                <div class="chart-body">
-                    <canvas id="accountsChart"></canvas>
+                <div style="padding: 2rem; text-align: center; color: #6B7280;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
+                    <p>Gráfico de distribución de cuentas</p>
+                    <p style="font-size: 0.85rem;">(Se implementará con Chart.js)</p>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- Recent Transactions -->
-        <section class="transactions-section">
-            <div class="section-header">
-                <h2 class="section-title">Transacciones Recientes</h2>
-                <a href="transacciones.html" class="section-link">Ver todas →</a>
+        <!-- Transacciones Recientes -->
+        <div class="card">
+            <div class="card-header">
+                <h3>📝 Transacciones Recientes</h3>
+                <div class="toolbar">
+                    <a href="transacciones.html" style="color: #3B82F6; text-decoration: none; font-weight: 500;">Ver todas →</a>
+                </div>
             </div>
-
+            
             <div class="table-container">
-                <table class="transactions-table">
+                <table class="data-table">
                     <thead>
                         <tr>
                             <th>ID</th>
                             <th>Fecha</th>
-                            <th>Socio</th>
                             <th>Tipo</th>
                             <th>Cuenta</th>
                             <th>Monto</th>
                             <th>Estado</th>
-                            <th>Acciones</th>
                         </tr>
                     </thead>
-                    <tbody id="transactionsBody">
-                        <tr class="loading-row">
-                            <td colspan="8">
-                                <div class="loading-spinner"></div>
-                                <p>Cargando transacciones...</p>
+                    <tbody id="transaccionesTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 3rem;">
+                                <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
+                                <p style="color: #6B7280; font-size: 1rem;">No hay transacciones recientes</p>
+                                <button class="btn-primary" onclick="window.location.href='transacciones.html'" style="margin-top: 1rem;">
+                                    Ver todas las transacciones
+                                </button>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-        </section>
+        </div>
 
-        <!-- Quick Actions -->
-        <section class="quick-actions">
-            <h2 class="section-title">Acciones Rápidas</h2>
-            <div class="actions-grid">
-                <button class="action-btn action-blue">
-                    <span class="action-icon">👤</span>
-                    <span class="action-text">Nuevo Socio</span>
+        <!-- Acciones Rápidas -->
+        <div class="card" style="margin-top: 2rem;">
+            <div class="card-header">
+                <h3>⚡ Acciones Rápidas</h3>
+            </div>
+            <div style="padding: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <button class="btn-primary" onclick="window.location.href='socios.html'" style="padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 2rem;">�</span>
+                    <span>Nuevo Socio</span>
                 </button>
-                <button class="action-btn action-green">
-                    <span class="action-icon">💰</span>
-                    <span class="action-text">Nueva Cuenta</span>
+                <button class="btn-primary" onclick="window.location.href='cuentas.html'" style="padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+                    <span style="font-size: 2rem;">�</span>
+                    <span>Nueva Cuenta</span>
                 </button>
-                <button class="action-btn action-purple">
-                    <span class="action-icon">💳</span>
-                    <span class="action-text">Nuevo Préstamo</span>
+                <button class="btn-primary" onclick="window.location.href='prestamos.html'" style="padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
+                    <span style="font-size: 2rem;">�</span>
+                    <span>Nuevo Préstamo</span>
                 </button>
-                <button class="action-btn action-orange">
-                    <span class="action-icon">🔄</span>
-                    <span class="action-text">Nueva Transacción</span>
+                <button class="btn-primary" onclick="window.location.href='transacciones.html'" style="padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);">
+                    <span style="font-size: 2rem;">�</span>
+                    <span>Nueva Transacción</span>
                 </button>
             </div>
-        </section>
+        </div>
     </main>
 
     <script src="dashboard.js"></script>
