@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuentas - COOP-SMART</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="cuentas.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">🏦</span>
+                <span class="logo-text">COOP-SMART</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <span class="toggle-icon">☰</span>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="socios.html" class="nav-item">
+                <span class="nav-icon">👥</span>
+                <span class="nav-text">Socios/Clientes</span>
+            </a>
+            <a href="cuentas.html" class="nav-item active">
+                <span class="nav-icon">💰</span>
+                <span class="nav-text">Cuentas</span>
+            </a>
+            <a href="prestamos.html" class="nav-item">
+                <span class="nav-icon">💳</span>
+                <span class="nav-text">Préstamos</span>
+            </a>
+            <a href="transacciones.html" class="nav-item">
+                <span class="nav-icon">🔄</span>
+                <span class="nav-text">Transacciones</span>
+            </a>
+            <a href="pagos.html" class="nav-item">
+                <span class="nav-icon">💵</span>
+                <span class="nav-text">Pagos</span>
+            </a>
+            <a href="reportes.html" class="nav-item">
+                <span class="nav-icon">📈</span>
+                <span class="nav-text">Reportes</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">👤</div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Admin</div>
+                    <div class="user-role" id="userRole">Administrador</div>
+                </div>
+            </div>
+            <button class="logout-btn" id="logoutBtn">
+                <span class="logout-icon">🚪</span>
+                <span class="logout-text">Cerrar Sesión</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <span class="menu-icon">☰</span>
+                </button>
+                <h1 class="page-title">Gestión de Cuentas</h1>
+            </div>
+            <div class="header-right">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Buscar cuenta..." class="search-input" id="globalSearch">
+                </div>
+                <button class="notification-btn">
+                    <span class="notification-icon">🔔</span>
+                    <span class="notification-badge">3</span>
+                </button>
+                <div class="header-user">
+                    <div class="header-avatar">👤</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <section class="stats-grid">
+            <div class="stat-card stat-green">
+                <div class="stat-icon">💰</div>
+                <div class="stat-content">
+                    <h3 class="stat-label">Total en Cuentas</h3>
+                    <p class="stat-value" id="totalSaldo">L. 0.00</p>
+                </div>
+            </div>
+            <div class="stat-card stat-blue">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <h3 class="stat-label">Total Cuentas</h3>
+                    <p class="stat-value" id="totalCuentas">0</p>
+                </div>
+            </div>
+            <div class="stat-card stat-purple">
+                <div class="stat-icon">✅</div>
+                <div class="stat-content">
+                    <h3 class="stat-label">Cuentas Activas</h3>
+                    <p class="stat-value" id="cuentasActivas">0</p>
+                </div>
+            </div>
+            <div class="stat-card stat-orange">
+                <div class="stat-icon">📅</div>
+                <div class="stat-content">
+                    <h3 class="stat-label">Nuevas este mes</h3>
+                    <p class="stat-value" id="nuevasMes">0</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filters and Actions -->
+        <section class="toolbar">
+            <div class="toolbar-left">
+                <div class="filter-group">
+                    <button class="filter-btn active" data-filter="todas">
+                        Todas <span class="filter-count" id="countTodas">0</span>
+                    </button>
+                    <button class="filter-btn" data-filter="ahorro">
+                        💎 Ahorro <span class="filter-count" id="countAhorro">0</span>
+                    </button>
+                    <button class="filter-btn" data-filter="corriente">
+                        💳 Corriente <span class="filter-count" id="countCorriente">0</span>
+                    </button>
+                    <button class="filter-btn" data-filter="plazo_fijo">
+                        🔒 Plazo Fijo <span class="filter-count" id="countPlazo">0</span>
+                    </button>
+                </div>
+                <div class="filter-group">
+                    <select class="filter-select" id="estadoFilter">
+                        <option value="todas">Todos los estados</option>
+                        <option value="activa">Activas</option>
+                        <option value="inactiva">Inactivas</option>
+                        <option value="bloqueada">Bloqueadas</option>
+                    </select>
+                </div>
+            </div>
+            <div class="toolbar-right">
+                <button class="btn-secondary" id="btnExportar">
+                    <span class="btn-icon">📥</span>
+                    Exportar
+                </button>
+                <button class="btn-primary" id="btnNuevaCuenta">
+                    <span class="btn-icon">➕</span>
+                    Nueva Cuenta
+                </button>
+            </div>
+        </section>
+
+        <!-- Table -->
+        <section class="table-section">
+            <div class="table-container">
+                <table class="data-table" id="cuentasTable">
+                    <thead>
+                        <tr>
+                            <th>Número de Cuenta</th>
+                            <th>Titular</th>
+                            <th>Tipo</th>
+                            <th>Saldo</th>
+                            <th>Tasa Interés</th>
+                            <th>Fecha Apertura</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuentasTableBody">
+                        <tr class="loading-row">
+                            <td colspan="8">
+                                <div class="loading-spinner"></div>
+                                <p>Cargando cuentas...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal: Nueva Cuenta -->
+    <div class="modal" id="modalNuevaCuenta">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h2 class="modal-title">Nueva Cuenta</h2>
+                <button class="modal-close" id="btnCloseNueva">✕</button>
+            </div>
+            <form id="formNuevaCuenta">
+                <div class="modal-body">
+                    <!-- Seleccionar Socio/Cliente -->
+                    <div class="form-section">
+                        <h3 class="section-title">Titular de la Cuenta</h3>
+                        <div class="form-group">
+                            <label for="id_socio">Buscar Socio/Cliente *</label>
+                            <select id="id_socio" name="id_socio" required>
+                                <option value="">Seleccionar...</option>
+                            </select>
+                            <small class="form-help">Selecciona el titular de la cuenta</small>
+                        </div>
+                    </div>
+
+                    <!-- Tipo de Cuenta -->
+                    <div class="form-section">
+                        <h3 class="section-title">Tipo de Cuenta</h3>
+                        <div class="radio-grid">
+                            <label class="radio-card">
+                                <input type="radio" name="tipo_cuenta" value="ahorro" checked>
+                                <div class="radio-content">
+                                    <span class="radio-icon">💎</span>
+                                    <span class="radio-label">Ahorro</span>
+                                    <span class="radio-description">Interés del 5% anual</span>
+                                </div>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="tipo_cuenta" value="corriente">
+                                <div class="radio-content">
+                                    <span class="radio-icon">💳</span>
+                                    <span class="radio-label">Corriente</span>
+                                    <span class="radio-description">Sin intereses</span>
+                                </div>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="tipo_cuenta" value="plazo_fijo">
+                                <div class="radio-content">
+                                    <span class="radio-icon">🔒</span>
+                                    <span class="radio-label">Plazo Fijo</span>
+                                    <span class="radio-description">Interés del 8% anual</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Detalles de la Cuenta -->
+                    <div class="form-section">
+                        <h3 class="section-title">Detalles de la Cuenta</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="saldo_inicial">Saldo Inicial (L.) *</label>
+                                <input type="number" id="saldo_inicial" name="saldo_inicial" 
+                                       step="0.01" min="0" value="0.00" required>
+                                <small class="form-help">Mínimo L. 100.00</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="tasa_interes">Tasa de Interés (%)</label>
+                                <input type="number" id="tasa_interes" name="tasa_interes" 
+                                       step="0.01" min="0" value="5.00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Plazo Fijo (solo visible si se selecciona) -->
+                    <div class="form-section" id="seccionPlazoFijo" style="display: none;">
+                        <h3 class="section-title">Configuración de Plazo Fijo</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="plazo_meses">Plazo (meses) *</label>
+                                <select id="plazo_meses" name="plazo_meses">
+                                    <option value="3">3 meses</option>
+                                    <option value="6">6 meses</option>
+                                    <option value="12" selected>12 meses</option>
+                                    <option value="24">24 meses</option>
+                                    <option value="36">36 meses</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="fecha_vencimiento">Fecha de Vencimiento</label>
+                                <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" readonly>
+                            </div>
+                        </div>
+                        <div class="info-box info-blue">
+                            <span class="info-icon">ℹ️</span>
+                            <div>
+                                <strong>Importante:</strong>
+                                <p>No podrás retirar el dinero antes de la fecha de vencimiento sin penalización</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="btnCancelarNueva">Cancelar</button>
+                    <button type="submit" class="btn-primary">
+                        <span class="btn-icon">💾</span>
+                        Crear Cuenta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Transacción (Depósito/Retiro) -->
+    <div class="modal" id="modalTransaccion">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2 class="modal-title" id="tituloTransaccion">Nueva Transacción</h2>
+                <button class="modal-close" id="btnCloseTransaccion">✕</button>
+            </div>
+            <form id="formTransaccion">
+                <input type="hidden" id="transaccion_id_cuenta" name="id_cuenta">
+                <input type="hidden" id="transaccion_tipo" name="tipo">
+                
+                <div class="modal-body">
+                    <div class="cuenta-info">
+                        <div class="cuenta-numero" id="cuentaNumeroTransaccion">---</div>
+                        <div class="cuenta-titular" id="cuentaTitularTransaccion">---</div>
+                        <div class="cuenta-saldo">
+                            <span class="saldo-label">Saldo Actual:</span>
+                            <span class="saldo-value" id="saldoActualTransaccion">L. 0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="monto">Monto (L.) *</label>
+                        <input type="number" id="monto" name="monto" 
+                               step="0.01" min="0.01" required autofocus>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="descripcion">Descripción</label>
+                        <textarea id="descripcion" name="descripcion" rows="3" 
+                                  placeholder="Motivo de la transacción..."></textarea>
+                    </div>
+
+                    <div class="saldo-preview">
+                        <span class="preview-label">Nuevo Saldo:</span>
+                        <span class="preview-value" id="nuevoSaldo">L. 0.00</span>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="btnCancelarTransaccion">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btnConfirmarTransaccion">
+                        <span class="btn-icon">✓</span>
+                        Confirmar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Detalles de Cuenta -->
+    <div class="modal" id="modalDetalles">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 class="modal-title">Detalles de la Cuenta</h2>
+                <button class="modal-close" id="btnCloseDetalles">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="details-header">
+                    <div class="details-icon">💰</div>
+                    <div class="details-info">
+                        <h3 id="detallesNumero">---</h3>
+                        <p id="detallesTitular">---</p>
+                        <div class="details-badges">
+                            <span class="badge" id="detallesTipo">---</span>
+                            <span class="badge" id="detallesEstado">---</span>
+                        </div>
+                    </div>
+                    <div class="details-saldo">
+                        <div class="saldo-grande" id="detallesSaldo">L. 0.00</div>
+                        <div class="saldo-label">Saldo Disponible</div>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="informacion">Información</button>
+                    <button class="tab-btn" data-tab="movimientos">Movimientos</button>
+                    <button class="tab-btn" data-tab="estadisticas">Estadísticas</button>
+                </div>
+
+                <div class="tab-content active" id="tabInformacion">
+                    <div class="details-grid" id="detallesInformacion">
+                        <!-- Se llenará dinámicamente -->
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tabMovimientos">
+                    <div class="movimientos-container">
+                        <table class="movimientos-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Descripción</th>
+                                    <th>Monto</th>
+                                    <th>Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="movimientosBody">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 2rem;">
+                                        Cargando movimientos...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tabEstadisticas">
+                    <p class="tab-placeholder">Estadísticas en desarrollo...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btnCerrarDetalles">Cerrar</button>
+                <button class="btn-primary" id="btnImprimirEstado">
+                    <span class="btn-icon">🖨️</span>
+                    Imprimir Estado de Cuenta
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+    <script src="cuentas.js"></script>
+</body>
+</html>

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transacciones - COOP-SMART</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="transacciones.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">🏦</span>
+                <span class="logo-text">COOP-SMART</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <span class="toggle-icon">☰</span>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="socios.html" class="nav-item">
+                <span class="nav-icon">👥</span>
+                <span class="nav-text">Socios/Clientes</span>
+            </a>
+            <a href="cuentas.html" class="nav-item">
+                <span class="nav-icon">💰</span>
+                <span class="nav-text">Cuentas</span>
+            </a>
+            <a href="prestamos.html" class="nav-item">
+                <span class="nav-icon">💳</span>
+                <span class="nav-text">Préstamos</span>
+            </a>
+            <a href="transacciones.html" class="nav-item active">
+                <span class="nav-icon">🔄</span>
+                <span class="nav-text">Transacciones</span>
+            </a>
+            <a href="pagos.html" class="nav-item">
+                <span class="nav-icon">💵</span>
+                <span class="nav-text">Pagos</span>
+            </a>
+            <a href="reportes.html" class="nav-item">
+                <span class="nav-icon">📈</span>
+                <span class="nav-text">Reportes</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">👤</div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Admin</div>
+                    <div class="user-role" id="userRole">Administrador</div>
+                </div>
+            </div>
+            <button class="logout-btn" id="logoutBtn">
+                <span class="logout-icon">🚪</span>
+                <span class="logout-text">Cerrar Sesión</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <span class="menu-icon">☰</span>
+                </button>
+                <h1 class="page-title">Historial de Transacciones</h1>
+            </div>
+            <div class="header-right">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Buscar transacción..." class="search-input" id="globalSearch">
+                </div>
+                <button class="notification-btn">
+                    <span class="notification-icon">🔔</span>
+                    <span class="notification-badge">3</span>
+                </button>
+                <div class="header-user">
+                    <div class="header-avatar">👤</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <section class="stats-grid">
+            <div class="stat-card stat-green">
+                <div class="stat-icon">⬇️</div>
+                <div class="stat-content">
+                    <h3 class="stat-label">Total Depósitos</h3>
+                    <p class="stat-value" id="totalDepositos">L. 0.00</p>
+                    <small class="stat-count" id="countDepositos">0 transacciones</small>
+                </div>
+            </div>
+            <div class="stat-card stat-red">
+                <div class="stat-icon">⬆️</div>
+                <div class="stat-content">
+                    <h3 class="stat-label">Total Retiros</h3>
+                    <p class="stat-value" id="totalRetiros">L. 0.00</p>
+                    <small class="stat-count" id="countRetiros">0 transacciones</small>
+                </div>
+            </div>
+            <div class="stat-card stat-blue">
+                <div class="stat-icon">💱</div>
+                <div class="stat-content">
+                    <h3 class="stat-label">Total Transferencias</h3>
+                    <p class="stat-value" id="totalTransferencias">L. 0.00</p>
+                    <small class="stat-count" id="countTransferencias">0 transacciones</small>
+                </div>
+            </div>
+            <div class="stat-card stat-purple">
+                <div class="stat-icon">📅</div>
+                <div class="stat-content">
+                    <h3 class="stat-label">Hoy</h3>
+                    <p class="stat-value" id="transaccionesHoy">0</p>
+                    <small class="stat-count" id="montoHoy">L. 0.00</small>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filters Section -->
+        <section class="filters-section">
+            <div class="filters-card">
+                <h3 class="filters-title">Filtros</h3>
+                <div class="filters-grid">
+                    <!-- Tipo de Transacción -->
+                    <div class="filter-group">
+                        <label class="filter-label">Tipo</label>
+                        <div class="filter-buttons">
+                            <button class="filter-chip active" data-tipo="todos">
+                                Todos
+                            </button>
+                            <button class="filter-chip" data-tipo="deposito">
+                                ⬇️ Depósitos
+                            </button>
+                            <button class="filter-chip" data-tipo="retiro">
+                                ⬆️ Retiros
+                            </button>
+                            <button class="filter-chip" data-tipo="transferencia">
+                                💱 Transferencias
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Rango de Fechas -->
+                    <div class="filter-group">
+                        <label class="filter-label">Período</label>
+                        <div class="date-filters">
+                            <button class="date-chip active" data-periodo="hoy">Hoy</button>
+                            <button class="date-chip" data-periodo="semana">Esta Semana</button>
+                            <button class="date-chip" data-periodo="mes">Este Mes</button>
+                            <button class="date-chip" data-periodo="custom">Personalizado</button>
+                        </div>
+                    </div>
+
+                    <!-- Fechas Personalizadas -->
+                    <div class="filter-group" id="customDateGroup" style="display: none;">
+                        <label class="filter-label">Rango Personalizado</label>
+                        <div class="date-inputs">
+                            <input type="date" id="fechaDesde" class="date-input">
+                            <span style="color: #6B7280;">hasta</span>
+                            <input type="date" id="fechaHasta" class="date-input">
+                            <button class="btn-apply" id="btnAplicarFechas">Aplicar</button>
+                        </div>
+                    </div>
+
+                    <!-- Cuenta -->
+                    <div class="filter-group">
+                        <label class="filter-label">Cuenta</label>
+                        <select id="filtroCuenta" class="filter-select">
+                            <option value="todas">Todas las cuentas</option>
+                        </select>
+                    </div>
+
+                    <!-- Monto -->
+                    <div class="filter-group">
+                        <label class="filter-label">Rango de Monto</label>
+                        <div class="monto-inputs">
+                            <input type="number" id="montoMin" placeholder="Mínimo" class="monto-input" step="0.01">
+                            <span style="color: #6B7280;">-</span>
+                            <input type="number" id="montoMax" placeholder="Máximo" class="monto-input" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filters-actions">
+                    <button class="btn-secondary" id="btnLimpiarFiltros">
+                        🔄 Limpiar Filtros
+                    </button>
+                    <button class="btn-primary" id="btnAplicarFiltros">
+                        🔍 Aplicar Filtros
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Actions Toolbar -->
+        <section class="toolbar">
+            <div class="toolbar-left">
+                <div class="results-info">
+                    <span class="results-count" id="resultsCount">0 transacciones encontradas</span>
+                </div>
+            </div>
+            <div class="toolbar-right">
+                <button class="btn-secondary" id="btnExportarCSV">
+                    <span class="btn-icon">📥</span>
+                    Exportar CSV
+                </button>
+                <button class="btn-secondary" id="btnExportarPDF">
+                    <span class="btn-icon">📄</span>
+                    Exportar PDF
+                </button>
+                <button class="btn-primary" id="btnNuevaTransaccion">
+                    <span class="btn-icon">➕</span>
+                    Nueva Transacción
+                </button>
+            </div>
+        </section>
+
+        <!-- Table -->
+        <section class="table-section">
+            <div class="table-container">
+                <table class="data-table" id="transaccionesTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha y Hora</th>
+                            <th>Tipo</th>
+                            <th>Cuenta</th>
+                            <th>Titular</th>
+                            <th>Monto</th>
+                            <th>Saldo Después</th>
+                            <th>Descripción</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transaccionesTableBody">
+                        <tr class="loading-row">
+                            <td colspan="9">
+                                <div class="loading-spinner"></div>
+                                <p>Cargando transacciones...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" id="pagination">
+                <button class="pagination-btn" id="btnPrevPage" disabled>
+                    ← Anterior
+                </button>
+                <div class="pagination-info">
+                    Página <span id="currentPage">1</span> de <span id="totalPages">1</span>
+                </div>
+                <button class="pagination-btn" id="btnNextPage" disabled>
+                    Siguiente →
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal: Nueva Transacción -->
+    <div class="modal" id="modalNuevaTransaccion">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h2 class="modal-title">Nueva Transacción</h2>
+                <button class="modal-close" id="btnCloseNueva">✕</button>
+            </div>
+            <form id="formNuevaTransaccion">
+                <div class="modal-body">
+                    <!-- Tipo de Transacción -->
+                    <div class="form-section">
+                        <h3 class="section-title">Tipo de Transacción</h3>
+                        <div class="radio-grid">
+                            <label class="radio-card">
+                                <input type="radio" name="tipo" value="deposito" checked>
+                                <div class="radio-content">
+                                    <span class="radio-icon">⬇️</span>
+                                    <span class="radio-label">Depósito</span>
+                                </div>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="tipo" value="retiro">
+                                <div class="radio-content">
+                                    <span class="radio-icon">⬆️</span>
+                                    <span class="radio-label">Retiro</span>
+                                </div>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="tipo" value="transferencia">
+                                <div class="radio-content">
+                                    <span class="radio-icon">💱</span>
+                                    <span class="radio-label">Transferencia</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Cuenta Origen -->
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label for="id_cuenta">Cuenta *</label>
+                            <select id="id_cuenta" name="id_cuenta" required>
+                                <option value="">Seleccionar cuenta...</option>
+                            </select>
+                        </div>
+                        <div id="cuentaInfo" class="cuenta-info-box" style="display: none;">
+                            <div class="cuenta-numero" id="infoCuentaNumero">---</div>
+                            <div class="cuenta-titular" id="infoCuentaTitular">---</div>
+                            <div class="cuenta-saldo">
+                                <span>Saldo disponible:</span>
+                                <span id="infoCuentaSaldo">L. 0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cuenta Destino (solo para transferencias) -->
+                    <div class="form-section" id="seccionDestino" style="display: none;">
+                        <div class="form-group">
+                            <label for="id_cuenta_destino">Cuenta Destino *</label>
+                            <select id="id_cuenta_destino" name="id_cuenta_destino">
+                                <option value="">Seleccionar cuenta destino...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Monto y Descripción -->
+                    <div class="form-section">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="monto">Monto (L.) *</label>
+                                <input type="number" id="monto" name="monto" 
+                                       step="0.01" min="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="descripcion">Descripción</label>
+                                <input type="text" id="descripcion" name="descripcion" 
+                                       placeholder="Motivo de la transacción">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview del nuevo saldo -->
+                    <div class="preview-box" id="previewBox" style="display: none;">
+                        <div class="preview-item">
+                            <span class="preview-label">Saldo Actual:</span>
+                            <span class="preview-value" id="previewSaldoActual">L. 0.00</span>
+                        </div>
+                        <div class="preview-arrow">→</div>
+                        <div class="preview-item">
+                            <span class="preview-label">Nuevo Saldo:</span>
+                            <span class="preview-value highlight" id="previewNuevoSaldo">L. 0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="btnCancelarNueva">Cancelar</button>
+                    <button type="submit" class="btn-primary">
+                        <span class="btn-icon">💾</span>
+                        Procesar Transacción
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Detalles de Transacción -->
+    <div class="modal" id="modalDetalles">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h2 class="modal-title">Detalles de la Transacción</h2>
+                <button class="modal-close" id="btnCloseDetalles">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="detalles-header">
+                    <div class="detalles-icon" id="detallesIcono">💰</div>
+                    <div class="detalles-info">
+                        <h3 id="detallesTipo">---</h3>
+                        <p id="detallesFecha">---</p>
+                    </div>
+                    <div class="detalles-monto">
+                        <div class="monto-transaccion" id="detallesMonto">L. 0.00</div>
+                    </div>
+                </div>
+
+                <div class="detalles-grid" id="detallesContenido">
+                    <!-- Se llenará dinámicamente -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btnCerrarDetalles">Cerrar</button>
+                <button class="btn-primary" id="btnImprimirRecibo">
+                    <span class="btn-icon">🖨️</span>
+                    Imprimir Recibo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+    <script src="transacciones.js"></script>
+</body>
+</html>

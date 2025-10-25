@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagos - COOP-SMART</title>
+    <link rel="stylesheet" href="pagos.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-icon">💰</div>
+                <div>
+                    <h1 class="logo-text">COOP-SMART</h1>
+                    <p class="logo-subtitle">Sistema de Gestión Cooperativa</p>
+                </div>
+            </div>
+            
+            <div class="header-search">
+                <input type="text" id="globalSearch" placeholder="Buscar por préstamo, socio, referencia..." class="search-input">
+                <span class="search-icon">🔍</span>
+            </div>
+            
+            <div class="user-menu">
+                <div class="user-info">
+                    <span class="user-name" id="userName">Admin</span>
+                    <span class="user-role" id="userRole">Administrador</span>
+                </div>
+                <button class="logout-btn" id="logoutBtn">
+                    <span>🚪</span> Salir
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav-menu">
+        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+        <a href="socios.html" class="nav-link">👥 Socios</a>
+        <a href="cuentas.html" class="nav-link">💳 Cuentas</a>
+        <a href="prestamos.html" class="nav-link">💵 Préstamos</a>
+        <a href="transacciones.html" class="nav-link">📝 Transacciones</a>
+        <a href="pagos.html" class="nav-link active">💸 Pagos</a>
+        <a href="reportes.html" class="nav-link">📈 Reportes</a>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h2 class="page-title">💸 Gestión de Pagos</h2>
+                <p class="page-subtitle">Administra los pagos de préstamos y consulta planes de amortización</p>
+            </div>
+            <button class="btn-primary" id="btnRegistrarPago">
+                <span>➕</span> Registrar Pago
+            </button>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="stats-grid">
+            <div class="stat-card stat-blue">
+                <div class="stat-icon">💰</div>
+                <div class="stat-info">
+                    <div class="stat-label">Total Recaudado Hoy</div>
+                    <div class="stat-value" id="totalRecaudadoHoy">L. 0.00</div>
+                    <div class="stat-count" id="countPagosHoy">0 pagos</div>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-green">
+                <div class="stat-icon">✅</div>
+                <div class="stat-info">
+                    <div class="stat-label">Pagos al Día</div>
+                    <div class="stat-value" id="prestamosAlDia">0</div>
+                    <div class="stat-count" id="percentAlDia">0% del total</div>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-orange">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-info">
+                    <div class="stat-label">Pagos Próximos (7 días)</div>
+                    <div class="stat-value" id="pagosProximos">0</div>
+                    <div class="stat-count" id="montoProximo">L. 0.00 estimado</div>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-red">
+                <div class="stat-icon">❌</div>
+                <div class="stat-info">
+                    <div class="stat-label">Préstamos en Mora</div>
+                    <div class="stat-value" id="prestamosMora">0</div>
+                    <div class="stat-count" id="montoMora">L. 0.00 atrasado</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters-card">
+            <div class="filters-header">
+                <h3>🔍 Filtros</h3>
+                <button class="btn-secondary" id="btnLimpiarFiltros">Limpiar</button>
+            </div>
+            
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label class="filter-label">Estado del Préstamo</label>
+                    <div class="filter-chips">
+                        <button class="filter-chip active" data-estado="todos">Todos</button>
+                        <button class="filter-chip" data-estado="al_dia">Al Día</button>
+                        <button class="filter-chip" data-estado="proximo">Próximo Venc.</button>
+                        <button class="filter-chip" data-estado="mora">En Mora</button>
+                        <button class="filter-chip" data-estado="pagado">Pagado</button>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">Período</label>
+                    <div class="date-chips">
+                        <button class="date-chip active" data-periodo="mes">Este Mes</button>
+                        <button class="date-chip" data-periodo="trimestre">Trimestre</button>
+                        <button class="date-chip" data-periodo="semestre">Semestre</button>
+                        <button class="date-chip" data-periodo="anio">Año</button>
+                        <button class="date-chip" data-periodo="custom">Personalizado</button>
+                    </div>
+                </div>
+                
+                <div class="filter-group" id="customDateGroup" style="display: none;">
+                    <label class="filter-label">Rango de Fechas</label>
+                    <div class="date-range">
+                        <input type="date" id="fechaDesde" class="date-input">
+                        <span>hasta</span>
+                        <input type="date" id="fechaHasta" class="date-input">
+                        <button class="btn-apply" id="btnAplicarFechas">Aplicar</button>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">Préstamo</label>
+                    <select id="filtroPrestamo" class="filter-select">
+                        <option value="todos">Todos los préstamos</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">Socio</label>
+                    <select id="filtroSocio" class="filter-select">
+                        <option value="todos">Todos los socios</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs-container">
+            <button class="tab-btn active" data-tab="prestamos">
+                📋 Préstamos Activos
+            </button>
+            <button class="tab-btn" data-tab="pagos">
+                📝 Historial de Pagos
+            </button>
+            <button class="tab-btn" data-tab="pendientes">
+                ⏰ Pagos Pendientes
+            </button>
+        </div>
+
+        <!-- Tab: Préstamos Activos -->
+        <div class="tab-content active" id="tabPrestamos">
+            <div class="card">
+                <div class="card-header">
+                    <h3>📋 Préstamos con Pagos Pendientes</h3>
+                    <div class="toolbar">
+                        <span class="results-count" id="resultsCountPrestamos">0 préstamos</span>
+                        <button class="btn-icon" id="btnExportarPrestamos" title="Exportar">
+                            📥 Exportar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Socio/Cliente</th>
+                                <th>Monto Prestado</th>
+                                <th>Saldo Pendiente</th>
+                                <th>Cuota Mensual</th>
+                                <th>Próximo Pago</th>
+                                <th>Estado</th>
+                                <th>Progreso</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="prestamosTableBody">
+                            <tr class="loading-row">
+                                <td colspan="9">
+                                    <div class="loading-spinner"></div>
+                                    <p>Cargando préstamos...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination">
+                    <button class="pagination-btn" id="btnPrevPagePrestamos" disabled>← Anterior</button>
+                    <span class="pagination-info">
+                        Página <span id="currentPagePrestamos">1</span> de <span id="totalPagesPrestamos">1</span>
+                    </span>
+                    <button class="pagination-btn" id="btnNextPagePrestamos" disabled>Siguiente →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Historial de Pagos -->
+        <div class="tab-content" id="tabPagos">
+            <div class="card">
+                <div class="card-header">
+                    <h3>📝 Historial de Pagos Realizados</h3>
+                    <div class="toolbar">
+                        <span class="results-count" id="resultsCountPagos">0 pagos</span>
+                        <button class="btn-icon" id="btnExportarPagos" title="Exportar">
+                            📥 Exportar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID Pago</th>
+                                <th>Fecha</th>
+                                <th>ID Préstamo</th>
+                                <th>Socio/Cliente</th>
+                                <th>Cuota #</th>
+                                <th>Monto Pagado</th>
+                                <th>Capital</th>
+                                <th>Interés</th>
+                                <th>Método</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pagosTableBody">
+                            <tr class="loading-row">
+                                <td colspan="10">
+                                    <div class="loading-spinner"></div>
+                                    <p>Cargando pagos...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination">
+                    <button class="pagination-btn" id="btnPrevPagePagos" disabled>← Anterior</button>
+                    <span class="pagination-info">
+                        Página <span id="currentPagePagos">1</span> de <span id="totalPagesPagos">1</span>
+                    </span>
+                    <button class="pagination-btn" id="btnNextPagePagos" disabled>Siguiente →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Pagos Pendientes -->
+        <div class="tab-content" id="tabPendientes">
+            <div class="card">
+                <div class="card-header">
+                    <h3>⏰ Cuotas Pendientes de Pago</h3>
+                    <div class="toolbar">
+                        <span class="results-count" id="resultsCountPendientes">0 cuotas</span>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Préstamo</th>
+                                <th>Socio/Cliente</th>
+                                <th>Cuota #</th>
+                                <th>Fecha Vencimiento</th>
+                                <th>Monto Cuota</th>
+                                <th>Capital</th>
+                                <th>Interés</th>
+                                <th>Días</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendientesTableBody">
+                            <tr class="loading-row">
+                                <td colspan="10">
+                                    <div class="loading-spinner"></div>
+                                    <p>Cargando cuotas pendientes...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Registrar Pago -->
+    <div class="modal" id="modalRegistrarPago">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>💸 Registrar Pago de Préstamo</h3>
+                <button class="modal-close" id="btnCloseRegistrar">&times;</button>
+            </div>
+            
+            <form id="formRegistrarPago">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label for="id_prestamo">Préstamo *</label>
+                        <select id="id_prestamo" name="id_prestamo" required>
+                            <option value="">Seleccionar préstamo...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="prestamo-info-box" id="prestamoInfo" style="display: none;">
+                        <div class="info-row">
+                            <div class="info-item">
+                                <span class="info-label">Socio:</span>
+                                <span class="info-value" id="infoPrestamoSocio">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Monto Original:</span>
+                                <span class="info-value" id="infoPrestamoMonto">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Saldo Pendiente:</span>
+                                <span class="info-value" id="infoPrestamoSaldo">-</span>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-item">
+                                <span class="info-label">Cuota Mensual:</span>
+                                <span class="info-value" id="infoPrestamoCuota">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Pagos Realizados:</span>
+                                <span class="info-value" id="infoPrestamoPagados">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Cuotas Restantes:</span>
+                                <span class="info-value" id="infoPrestamoRestantes">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="numero_cuota">Número de Cuota *</label>
+                        <input type="number" id="numero_cuota" name="numero_cuota" min="1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="monto_pagado">Monto a Pagar *</label>
+                        <input type="number" id="monto_pagado" name="monto_pagado" step="0.01" min="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="monto_capital">Capital</label>
+                        <input type="number" id="monto_capital" name="monto_capital" step="0.01" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="monto_interes">Interés</label>
+                        <input type="number" id="monto_interes" name="monto_interes" step="0.01" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="fecha_pago">Fecha de Pago *</label>
+                        <input type="date" id="fecha_pago" name="fecha_pago" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="metodo_pago">Método de Pago *</label>
+                        <select id="metodo_pago" name="metodo_pago" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="efectivo">💵 Efectivo</option>
+                            <option value="transferencia">🏦 Transferencia</option>
+                            <option value="cheque">📝 Cheque</option>
+                            <option value="tarjeta">💳 Tarjeta</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="referencia">Referencia</label>
+                        <input type="text" id="referencia" name="referencia" placeholder="Número de cheque, referencia bancaria, etc.">
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="notas">Notas</label>
+                        <textarea id="notas" name="notas" rows="2" placeholder="Observaciones adicionales..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <strong>💡 Nota:</strong> El sistema calculará automáticamente la distribución entre capital e interés según el plan de amortización.
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="btnCancelarRegistrar">Cancelar</button>
+                    <button type="submit" class="btn-primary">💾 Registrar Pago</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Plan de Pagos -->
+    <div class="modal" id="modalPlanPagos">
+        <div class="modal-content modal-xlarge">
+            <div class="modal-header">
+                <h3>📊 Plan de Pagos y Amortización</h3>
+                <button class="modal-close" id="btnClosePlan">&times;</button>
+            </div>
+            
+            <div class="plan-info-header">
+                <div class="plan-info-item">
+                    <span class="plan-label">Préstamo #</span>
+                    <span class="plan-value" id="planPrestamoId">-</span>
+                </div>
+                <div class="plan-info-item">
+                    <span class="plan-label">Socio</span>
+                    <span class="plan-value" id="planSocio">-</span>
+                </div>
+                <div class="plan-info-item">
+                    <span class="plan-label">Monto Total</span>
+                    <span class="plan-value" id="planMonto">-</span>
+                </div>
+                <div class="plan-info-item">
+                    <span class="plan-label">Tasa</span>
+                    <span class="plan-value" id="planTasa">-</span>
+                </div>
+                <div class="plan-info-item">
+                    <span class="plan-label">Plazo</span>
+                    <span class="plan-value" id="planPlazo">-</span>
+                </div>
+            </div>
+            
+            <div class="plan-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="planProgress"></div>
+                </div>
+                <div class="progress-labels">
+                    <span>Pagado: <strong id="planPagado">L. 0.00</strong></span>
+                    <span>Pendiente: <strong id="planPendiente">L. 0.00</strong></span>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table class="data-table plan-table">
+                    <thead>
+                        <tr>
+                            <th>Cuota</th>
+                            <th>Fecha Venc.</th>
+                            <th>Cuota Total</th>
+                            <th>Capital</th>
+                            <th>Interés</th>
+                            <th>Saldo Pendiente</th>
+                            <th>Estado</th>
+                            <th>Fecha Pago</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="planPagosTableBody">
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn-secondary" id="btnCerrarPlan">Cerrar</button>
+                <button class="btn-primary" id="btnImprimirPlan">🖨️ Imprimir Plan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Recibo de Pago -->
+    <div class="modal" id="modalRecibo">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🧾 Recibo de Pago</h3>
+                <button class="modal-close" id="btnCloseRecibo">&times;</button>
+            </div>
+            
+            <div class="recibo-container">
+                <div class="recibo-header">
+                    <div class="recibo-logo">
+                        <div class="logo-icon-large">💰</div>
+                        <div>
+                            <h2>COOP-SMART</h2>
+                            <p>Cooperativa de Ahorro y Crédito</p>
+                        </div>
+                    </div>
+                    <div class="recibo-number">
+                        <span class="recibo-label">Recibo No.</span>
+                        <span class="recibo-value" id="reciboNumero">-</span>
+                    </div>
+                </div>
+                
+                <div class="recibo-divider"></div>
+                
+                <div class="recibo-details" id="reciboDetalles">
+                    <!-- Contenido dinámico -->
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn-secondary" id="btnCerrarRecibo">Cerrar</button>
+                <button class="btn-primary" id="btnImprimirRecibo">🖨️ Imprimir</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="pagos.js"></script>
+</body>
+</html>
