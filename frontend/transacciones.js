@@ -3,7 +3,7 @@
 // ============================================
 
 // Configuración de API
-const API_URL = window.location.hostname === 'localhost' 
+const API_URL = (window.location.hostname === 'localhost' || window.location.protocol === 'file:')
     ? 'http://localhost:3000' 
     : 'https://coop-smart.vercel.app';
 

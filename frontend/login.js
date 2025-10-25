@@ -4,7 +4,7 @@
  */
 
 // API Configuration
-const API_URL = window.location.hostname === 'localhost' 
+const API_URL = (window.location.hostname === 'localhost' || window.location.protocol === 'file:')
     ? 'http://localhost:3000' 
     : 'https://coop-smart.vercel.app';
 
@@ -51,6 +51,12 @@ loginForm.addEventListener('submit', async (e) => {
     hideAlerts();
     
     try {
+        // Debug logs
+        console.log('🔍 Intentando login...');
+        console.log('API URL:', API_URL);
+        console.log('Usuario:', username);
+        console.log('Enviando petición a:', `${API_URL}/api/auth/login`);
+        
         // Call API
         const response = await fetch(`${API_URL}/api/auth/login`, {
             method: 'POST',
@@ -63,7 +69,10 @@ loginForm.addEventListener('submit', async (e) => {
             })
         });
         
+        console.log('✅ Respuesta recibida:', response.status, response.statusText);
+        
         const data = await response.json();
+        console.log('📦 Datos:', data);
         
         if (response.ok) {
             // Login successful
@@ -83,7 +92,10 @@ loginForm.addEventListener('submit', async (e) => {
             setLoading(false);
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('❌ Error capturado:', error);
+        console.error('Tipo de error:', error.name);
+        console.error('Mensaje:', error.message);
+        console.error('Stack:', error.stack);
         showError('Error de conexión. Verifica que el servidor esté corriendo.');
         setLoading(false);
     }

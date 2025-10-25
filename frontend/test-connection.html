@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Conexión API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #3B82F6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563EB;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        h1 {
+            color: #1E40AF;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test de Conexión - COOP-SMART API</h1>
+    
+    <div class="test-box">
+        <h2>1. Test Servidor Base</h2>
+        <button onclick="testServerRoot()">Probar GET /</button>
+        <div id="result1" class="result" style="display:none;"></div>
+    </div>
+    
+    <div class="test-box">
+        <h2>2. Test Login Endpoint (POST)</h2>
+        <button onclick="testLogin()">Probar POST /api/auth/login</button>
+        <div id="result2" class="result" style="display:none;"></div>
+    </div>
+    
+    <div class="test-box">
+        <h2>3. Test Login con Credenciales</h2>
+        <input type="text" id="testUser" placeholder="Usuario" value="Josue" style="padding: 8px; margin: 5px;">
+        <input type="password" id="testPass" placeholder="Contraseña" value="Reyes2000" style="padding: 8px; margin: 5px;">
+        <br>
+        <button onclick="testLoginWithCreds()">Intentar Login</button>
+        <div id="result3" class="result" style="display:none;"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+
+        async function testServerRoot() {
+            const resultDiv = document.getElementById('result1');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.textContent = 'Probando conexión...';
+            
+            try {
+                const response = await fetch(`${API_URL}/`, {
+                    method: 'GET'
+                });
+                
+                const data = await response.json();
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '✅ Conexión exitosa!\n\n' + 
+                    'Status: ' + response.status + '\n' +
+                    'Response: ' + JSON.stringify(data, null, 2);
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ Error de conexión:\n\n' + error.message;
+            }
+        }
+
+        async function testLogin() {
+            const resultDiv = document.getElementById('result2');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.textContent = 'Probando endpoint...';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+                
+                const data = await response.json();
+                
+                if (response.status === 400) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '✅ Endpoint responde correctamente!\n\n' + 
+                        'Status: ' + response.status + '\n' +
+                        'Response: ' + JSON.stringify(data, null, 2) + '\n\n' +
+                        'Esto es correcto - el servidor rechaza la petición vacía.';
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = 'Status inesperado: ' + response.status + '\n' +
+                        'Response: ' + JSON.stringify(data, null, 2);
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ Error de conexión:\n\n' + error.message;
+            }
+        }
+
+        async function testLoginWithCreds() {
+            const resultDiv = document.getElementById('result3');
+            const username = document.getElementById('testUser').value;
+            const password = document.getElementById('testPass').value;
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.textContent = 'Intentando login...';
+            
+            try {
+                console.log('Enviando credenciales:', { nombre_usuario: username, contrasena: '***' });
+                
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nombre_usuario: username,
+                        contrasena: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                console.log('Respuesta del servidor:', data);
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '✅ Login exitoso!\n\n' + 
+                        'Status: ' + response.status + '\n' +
+                        'Token recibido: ' + (data.token ? 'Sí (' + data.token.substring(0, 20) + '...)' : 'No') + '\n' +
+                        'Usuario: ' + JSON.stringify(data.usuario, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ Login fallido:\n\n' + 
+                        'Status: ' + response.status + '\n' +
+                        'Error: ' + JSON.stringify(data, null, 2);
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ Error de conexión:\n\n' + 
+                    error.message + '\n\n' +
+                    'Verifica que:\n' +
+                    '1. El backend esté corriendo en http://localhost:3000\n' +
+                    '2. No haya firewall bloqueando la conexión\n' +
+                    '3. El navegador no tenga extensiones bloqueando CORS';
+            }
+        }
+    </script>
+</body>
+</html>
