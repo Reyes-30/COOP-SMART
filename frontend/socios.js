@@ -42,13 +42,18 @@ function checkAuth() {
 }
 
 function loadUserData() {
-    const user = JSON.parse(localStorage.getItem('usuario') || '{}');
-    document.querySelectorAll('#userName').forEach(el => {
-        el.textContent = user.nombre_completo || 'Usuario';
-    });
-    document.querySelectorAll('#userRole').forEach(el => {
-        el.textContent = translateRole(user.rol) || 'Usuario';
-    });
+    try {
+        const userStr = localStorage.getItem('user');
+        const user = userStr ? JSON.parse(userStr) : {};
+        document.querySelectorAll('#userName').forEach(el => {
+            el.textContent = user.nombre_completo || user.nombre_usuario || 'Usuario';
+        });
+        document.querySelectorAll('#userRole').forEach(el => {
+            el.textContent = translateRole(user.rol) || 'Usuario';
+        });
+    } catch (error) {
+        console.error('Error al cargar usuario:', error);
+    }
 }
 
 function translateRole(role) {
@@ -129,7 +134,7 @@ function setupEventListeners() {
 function handleLogout() {
     if (confirm('¿Está seguro que desea cerrar sesión?')) {
         localStorage.removeItem('token');
-        localStorage.removeItem('usuario');
+        localStorage.removeItem('user');
         window.location.href = 'login.html';
     }
 }

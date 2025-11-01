@@ -50,20 +50,25 @@ function checkAuthentication() {
 }
 
 function loadUserData() {
-    const user = JSON.parse(localStorage.getItem('usuario') || '{}');
-    userData = user;
-    
-    // Actualizar información del usuario en la UI
-    const userNameElements = document.querySelectorAll('#userName');
-    const userRoleElements = document.querySelectorAll('#userRole');
-    
-    userNameElements.forEach(el => {
-        el.textContent = user.nombre_completo || 'Usuario';
-    });
-    
-    userRoleElements.forEach(el => {
-        el.textContent = translateRole(user.rol) || 'Usuario';
-    });
+    try {
+        const userStr = localStorage.getItem('user');
+        const user = userStr ? JSON.parse(userStr) : {};
+        userData = user;
+        
+        // Actualizar información del usuario en la UI
+        const userNameElements = document.querySelectorAll('#userName');
+        const userRoleElements = document.querySelectorAll('#userRole');
+        
+        userNameElements.forEach(el => {
+            el.textContent = user.nombre_completo || user.nombre_usuario || 'Usuario';
+        });
+        
+        userRoleElements.forEach(el => {
+            el.textContent = translateRole(user.rol) || 'Usuario';
+        });
+    } catch (error) {
+        console.error('Error al cargar usuario:', error);
+    }
 }
 
 function translateRole(role) {
@@ -98,7 +103,7 @@ function setupEventListeners() {
 function handleLogout() {
     if (confirm('¿Está seguro que desea cerrar sesión?')) {
         localStorage.removeItem('token');
-        localStorage.removeItem('usuario');
+        localStorage.removeItem('user');
         window.location.href = 'login.html';
     }
 }

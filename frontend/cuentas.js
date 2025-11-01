@@ -41,14 +41,19 @@ function verificarAutenticacion() {
 
 // Cargar información del usuario
 function cargarUsuario() {
-    const nombre = localStorage.getItem('nombre') || 'Admin';
-    const rol = localStorage.getItem('rol') || 'Administrador';
-    
-    const userNameElements = document.querySelectorAll('#userName');
-    const userRoleElements = document.querySelectorAll('#userRole');
-    
-    userNameElements.forEach(el => el.textContent = nombre);
-    userRoleElements.forEach(el => el.textContent = rol);
+    try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            const userNameElements = document.querySelectorAll('#userName');
+            const userRoleElements = document.querySelectorAll('#userRole');
+            
+            userNameElements.forEach(el => el.textContent = user.nombre_completo || user.nombre_usuario || 'Usuario');
+            userRoleElements.forEach(el => el.textContent = user.rol || 'Usuario');
+        }
+    } catch (error) {
+        console.error('Error al cargar usuario:', error);
+    }
 }
 
 // ============================================
@@ -907,8 +912,7 @@ function mostrarError(mensaje) {
 function cerrarSesion() {
     if (confirm('¿Está seguro que desea cerrar sesión?')) {
         localStorage.removeItem('token');
-        localStorage.removeItem('nombre');
-        localStorage.removeItem('rol');
+        localStorage.removeItem('user');
         window.location.href = 'login.html';
     }
 }
