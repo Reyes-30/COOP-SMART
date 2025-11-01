@@ -59,89 +59,71 @@
             </button>
         </div>
 
-        <!-- Inicio del contenido -->
-        <div class="header-right">
-                <div class="search-box">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" placeholder="Buscar préstamo..." class="search-input" id="globalSearch">
-                </div>
-                <button class="notification-btn">
-                    <span class="notification-icon">🔔</span>
-                    <span class="notification-badge">3</span>
-                </button>
-                <div class="header-user">
-                    <div class="header-avatar">👤</div>
-                </div>
-            </div>
-        </header>
-
         <!-- Stats Cards -->
-        <section class="stats-grid">
+        <div class="stats-grid">
             <div class="stat-card stat-blue">
-                <div class="stat-icon">💳</div>
-                <div class="stat-content">
-                    <h3 class="stat-label">Total Prestado</h3>
-                    <p class="stat-value" id="totalPrestado">L. 0.00</p>
+                <div class="stat-icon">�</div>
+                <div class="stat-info">
+                    <div class="stat-label">Total Prestado</div>
+                    <div class="stat-value" id="totalPrestado">L. 0.00</div>
+                    <div class="stat-count" id="numPrestamos">0 préstamos</div>
                 </div>
             </div>
             <div class="stat-card stat-green">
                 <div class="stat-icon">✅</div>
-                <div class="stat-content">
-                    <h3 class="stat-label">Total Activos</h3>
-                    <p class="stat-value" id="prestamosActivos">0</p>
+                <div class="stat-info">
+                    <div class="stat-label">Activos</div>
+                    <div class="stat-value" id="prestamosActivos">0</div>
+                    <div class="stat-count">En curso</div>
                 </div>
             </div>
             <div class="stat-card stat-orange">
                 <div class="stat-icon">⏳</div>
-                <div class="stat-content">
-                    <h3 class="stat-label">Pendientes Aprobación</h3>
-                    <p class="stat-value" id="prestamosPendientes">0</p>
+                <div class="stat-info">
+                    <div class="stat-label">Pendientes Aprobación</div>
+                    <div class="stat-value" id="prestamosPendientes">0</div>
+                    <div class="stat-count">Por revisar</div>
                 </div>
             </div>
             <div class="stat-card stat-red">
                 <div class="stat-icon">⚠️</div>
-                <div class="stat-content">
-                    <h3 class="stat-label">En Mora</h3>
-                    <p class="stat-value" id="prestamosEnMora">0</p>
+                <div class="stat-info">
+                    <div class="stat-label">En Mora</div>
+                    <div class="stat-value" id="prestamosEnMora">0</div>
+                    <div class="stat-count">Atrasados</div>
                 </div>
             </div>
-        </section>
+        </div>
 
         <!-- Filters and Actions -->
-        <section class="toolbar">
-            <div class="toolbar-left">
-                <div class="filter-group">
-                    <button class="filter-btn active" data-filter="todos">
-                        Todos <span class="filter-count" id="countTodos">0</span>
-                    </button>
-                    <button class="filter-btn" data-filter="pendiente">
-                        ⏳ Pendientes <span class="filter-count" id="countPendiente">0</span>
-                    </button>
-                    <button class="filter-btn" data-filter="aprobado">
-                        ✅ Aprobados <span class="filter-count" id="countAprobado">0</span>
-                    </button>
-                    <button class="filter-btn" data-filter="rechazado">
-                        ❌ Rechazados <span class="filter-count" id="countRechazado">0</span>
-                    </button>
-                    <button class="filter-btn" data-filter="pagado">
-                        💚 Pagados <span class="filter-count" id="countPagado">0</span>
+        <div class="card">
+            <div class="card-header">
+                <h3>📋 Listado de Préstamos</h3>
+                <div class="toolbar">
+                    <div class="filter-group">
+                        <button class="filter-btn active" data-filter="todos">
+                            Todos <span class="filter-count" id="countTodos">0</span>
+                        </button>
+                        <button class="filter-btn" data-filter="pendiente">
+                            ⏳ Pendientes <span class="filter-count" id="countPendiente">0</span>
+                        </button>
+                        <button class="filter-btn" data-filter="aprobado">
+                            ✅ Aprobados <span class="filter-count" id="countAprobado">0</span>
+                        </button>
+                        <button class="filter-btn" data-filter="rechazado">
+                            ❌ Rechazados <span class="filter-count" id="countRechazado">0</span>
+                        </button>
+                        <button class="filter-btn" data-filter="pagado">
+                            💚 Pagados <span class="filter-count" id="countPagado">0</span>
+                        </button>
+                    </div>
+                    <button class="btn-secondary" id="btnCalculadora">
+                        🧮 Calculadora
                     </button>
                 </div>
             </div>
-            <div class="toolbar-right">
-                <button class="btn-secondary" id="btnCalculadora">
-                    <span class="btn-icon">🧮</span>
-                    Calculadora
-                </button>
-                <button class="btn-primary" id="btnNuevoPrestamo">
-                    <span class="btn-icon">➕</span>
-                    Nuevo Préstamo
-                </button>
-            </div>
-        </section>
 
-        <!-- Table -->
-        <section class="table-section">
+            <!-- Table -->
             <div class="table-container">
                 <table class="data-table" id="prestamosTable">
                     <thead>
@@ -168,7 +150,7 @@
                     </tbody>
                 </table>
             </div>
-        </section>
+        </div>
     </main>
 
     <!-- Modal: Nuevo Préstamo -->

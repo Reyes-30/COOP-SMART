@@ -59,94 +59,74 @@
             </button>
         </div>
 
-        <!-- Inicio del contenido -->
-        <div class="header-right">
-                <div class="search-box">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" placeholder="Buscar cuenta..." class="search-input" id="globalSearch">
-                </div>
-                <button class="notification-btn">
-                    <span class="notification-icon">🔔</span>
-                    <span class="notification-badge">3</span>
-                </button>
-                <div class="header-user">
-                    <div class="header-avatar">👤</div>
-                </div>
-            </div>
-        </header>
-
         <!-- Stats Cards -->
-        <section class="stats-grid">
+        <div class="stats-grid">
             <div class="stat-card stat-green">
-                <div class="stat-icon">💰</div>
-                <div class="stat-content">
-                    <h3 class="stat-label">Total en Cuentas</h3>
-                    <p class="stat-value" id="totalSaldo">L. 0.00</p>
+                <div class="stat-icon">�</div>
+                <div class="stat-info">
+                    <div class="stat-label">Total en Cuentas</div>
+                    <div class="stat-value" id="totalSaldo">L. 0.00</div>
+                    <div class="stat-count" id="totalCuentas">0 cuentas</div>
                 </div>
             </div>
             <div class="stat-card stat-blue">
-                <div class="stat-icon">📊</div>
-                <div class="stat-content">
-                    <h3 class="stat-label">Total Cuentas</h3>
-                    <p class="stat-value" id="totalCuentas">0</p>
+                <div class="stat-icon">�</div>
+                <div class="stat-info">
+                    <div class="stat-label">Total Cuentas</div>
+                    <div class="stat-value" id="numCuentas">0</div>
+                    <div class="stat-count">Registradas</div>
                 </div>
             </div>
             <div class="stat-card stat-purple">
                 <div class="stat-icon">✅</div>
-                <div class="stat-content">
-                    <h3 class="stat-label">Cuentas Activas</h3>
-                    <p class="stat-value" id="cuentasActivas">0</p>
+                <div class="stat-info">
+                    <div class="stat-label">Cuentas Activas</div>
+                    <div class="stat-value" id="cuentasActivas">0</div>
+                    <div class="stat-count">Actualmente</div>
                 </div>
             </div>
             <div class="stat-card stat-orange">
                 <div class="stat-icon">📅</div>
-                <div class="stat-content">
-                    <h3 class="stat-label">Nuevas este mes</h3>
-                    <p class="stat-value" id="nuevasMes">0</p>
+                <div class="stat-info">
+                    <div class="stat-label">Nuevas este mes</div>
+                    <div class="stat-value" id="nuevasMes">0</div>
+                    <div class="stat-count">Creadas recientemente</div>
                 </div>
             </div>
-        </section>
+        </div>
 
         <!-- Filters and Actions -->
-        <section class="toolbar">
-            <div class="toolbar-left">
-                <div class="filter-group">
-                    <button class="filter-btn active" data-filter="todas">
-                        Todas <span class="filter-count" id="countTodas">0</span>
-                    </button>
-                    <button class="filter-btn" data-filter="ahorro">
-                        💎 Ahorro <span class="filter-count" id="countAhorro">0</span>
-                    </button>
-                    <button class="filter-btn" data-filter="corriente">
-                        💳 Corriente <span class="filter-count" id="countCorriente">0</span>
-                    </button>
-                    <button class="filter-btn" data-filter="plazo_fijo">
-                        🔒 Plazo Fijo <span class="filter-count" id="countPlazo">0</span>
-                    </button>
-                </div>
-                <div class="filter-group">
+        <div class="card">
+            <div class="card-header">
+                <h3>📋 Listado de Cuentas</h3>
+                <div class="toolbar">
+                    <div class="filter-group">
+                        <button class="filter-btn active" data-filter="todas">
+                            Todas <span class="filter-count" id="countTodas">0</span>
+                        </button>
+                        <button class="filter-btn" data-filter="ahorro">
+                            💎 Ahorro <span class="filter-count" id="countAhorro">0</span>
+                        </button>
+                        <button class="filter-btn" data-filter="corriente">
+                            💳 Corriente <span class="filter-count" id="countCorriente">0</span>
+                        </button>
+                        <button class="filter-btn" data-filter="plazo_fijo">
+                            🔒 Plazo Fijo <span class="filter-count" id="countPlazo">0</span>
+                        </button>
+                    </div>
                     <select class="filter-select" id="estadoFilter">
                         <option value="todas">Todos los estados</option>
                         <option value="activa">Activas</option>
                         <option value="inactiva">Inactivas</option>
                         <option value="bloqueada">Bloqueadas</option>
                     </select>
+                    <button class="btn-secondary" id="btnExportar">
+                        📥 Exportar
+                    </button>
                 </div>
             </div>
-            <div class="toolbar-right">
-                <button class="btn-secondary" id="btnExportar">
-                    <span class="btn-icon">📥</span>
-                    Exportar
-                </button>
-                <button class="btn-primary" id="btnNuevaCuenta">
-                    <span class="btn-icon">➕</span>
-                    Nueva Cuenta
-                </button>
-            </div>
-        </section>
 
-        <!-- Table -->
-        <section class="table-section">
+            <!-- Table -->
             <div class="table-container">
                 <table class="data-table" id="cuentasTable">
                     <thead>
@@ -171,7 +151,7 @@
                     </tbody>
                 </table>
             </div>
-        </section>
+        </div>
     </main>
 
     <!-- Modal: Nueva Cuenta -->

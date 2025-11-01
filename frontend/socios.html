@@ -59,92 +59,70 @@
             </button>
         </div>
 
-        <!-- Inicio del contenido -->
-        <div class="stats-grid">
-            <div class="header-right">
-                <div class="search-box">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" placeholder="Buscar..." class="search-input" id="globalSearch">
-                </div>
-                <button class="notification-btn">
-                    <span class="notification-icon">🔔</span>
-                    <span class="notification-badge">3</span>
-                </button>
-                <div class="header-user">
-                    <div class="header-avatar">👤</div>
-                </div>
-            </div>
-        </header>
-
         <!-- Stats Cards -->
-        <section class="stats-grid">
+        <div class="stats-grid">
             <div class="stat-card stat-blue">
                 <div class="stat-icon">👥</div>
-                <div class="stat-content">
-                    <h3 class="stat-label">Total Socios</h3>
-                    <p class="stat-value" id="totalSocios">0</p>
+                <div class="stat-info">
+                    <div class="stat-label">Total Socios</div>
+                    <div class="stat-value" id="totalSocios">0</div>
+                    <div class="stat-count" id="countSociosActivos">0 activos</div>
                 </div>
             </div>
             <div class="stat-card stat-gray">
                 <div class="stat-icon">👤</div>
-                <div class="stat-content">
-                    <h3 class="stat-label">Total Clientes</h3>
-                    <p class="stat-value" id="totalClientes">0</p>
+                <div class="stat-info">
+                    <div class="stat-label">Total Clientes</div>
+                    <div class="stat-value" id="totalClientes">0</div>
+                    <div class="stat-count" id="countClientesActivos">0 activos</div>
                 </div>
             </div>
             <div class="stat-card stat-green">
                 <div class="stat-icon">✅</div>
-                <div class="stat-content">
-                    <h3 class="stat-label">Activos</h3>
-                    <p class="stat-value" id="totalActivos">0</p>
+                <div class="stat-info">
+                    <div class="stat-label">Activos</div>
+                    <div class="stat-value" id="totalActivos">0</div>
+                    <div class="stat-count">En total</div>
                 </div>
             </div>
             <div class="stat-card stat-orange">
                 <div class="stat-icon">📅</div>
-                <div class="stat-content">
-                    <h3 class="stat-label">Nuevos este mes</h3>
-                    <p class="stat-value" id="nuevosMes">0</p>
+                <div class="stat-info">
+                    <div class="stat-label">Nuevos este mes</div>
+                    <div class="stat-value" id="nuevosMes">0</div>
+                    <div class="stat-count">Registros nuevos</div>
                 </div>
             </div>
-        </section>
+        </div>
 
         <!-- Filters and Actions -->
-        <section class="toolbar">
-            <div class="toolbar-left">
-                <div class="filter-group">
-                    <button class="filter-btn active" data-filter="todos">
-                        Todos <span class="filter-count" id="countTodos">0</span>
-                    </button>
-                    <button class="filter-btn" data-filter="socio">
-                        👥 Socios <span class="filter-count" id="countSocios">0</span>
-                    </button>
-                    <button class="filter-btn" data-filter="cliente">
-                        👤 Clientes <span class="filter-count" id="countClientes">0</span>
-                    </button>
-                </div>
-                <div class="filter-group">
+        <div class="card">
+            <div class="card-header">
+                <h3>📋 Listado de Socios y Clientes</h3>
+                <div class="toolbar">
+                    <div class="filter-group">
+                        <button class="filter-btn active" data-filter="todos">
+                            Todos <span class="filter-count" id="countTodos">0</span>
+                        </button>
+                        <button class="filter-btn" data-filter="socio">
+                            👥 Socios <span class="filter-count" id="countSocios">0</span>
+                        </button>
+                        <button class="filter-btn" data-filter="cliente">
+                            👤 Clientes <span class="filter-count" id="countClientes">0</span>
+                        </button>
+                    </div>
                     <select class="filter-select" id="estadoFilter">
                         <option value="todos">Todos los estados</option>
                         <option value="activo">Activos</option>
                         <option value="inactivo">Inactivos</option>
                         <option value="suspendido">Suspendidos</option>
                     </select>
+                    <button class="btn-secondary" id="btnExportar">
+                        📥 Exportar
+                    </button>
                 </div>
             </div>
-            <div class="toolbar-right">
-                <button class="btn-secondary" id="btnExportar">
-                    <span class="btn-icon">📥</span>
-                    Exportar
-                </button>
-                <button class="btn-primary" id="btnNuevo">
-                    <span class="btn-icon">➕</span>
-                    Nuevo Registro
-                </button>
-            </div>
-        </section>
 
-        <!-- Table -->
-        <section class="table-section">
             <div class="table-container">
                 <table class="data-table" id="sociosTable">
                     <thead>
@@ -170,7 +148,7 @@
                     </tbody>
                 </table>
             </div>
-        </section>
+        </div>
     </main>
 
     <!-- Modal: Nuevo/Editar Socio -->
