@@ -492,3 +492,18 @@ Este proyecto ha sido desarrollado con fines académicos para la materia de Aná
 
 **Fecha de última actualización:** Noviembre 9, 2025  
 **Versión:** 1.0.0 (Primer Avance - Backend y Base de Datos)
+
+## 📅 Historial de Avances
+
+### **Avance 1: Backend y Base de Datos**
+- **Fecha:** 23 de Noviembre de 2025
+- **Estado:** ✅ Completado
+- **Entregables:** Estructura de BD, API RESTful, Configuración de Servidor.
+
+### **Avance 2: Frontend y Diseño Móvil**
+- **Fecha:** 23 de Noviembre de 2025
+- **Estado:** ✅ Completado
+- **Entregables:**
+  - Interfaz Web completa (Dashboard, Socios, Reportes, etc.).
+  - Mockups de Alta Fidelidad para App Móvil.
+  - Documentación de Diseño (`AVANCE-2-FRONTEND-MOCKUPS.md`).

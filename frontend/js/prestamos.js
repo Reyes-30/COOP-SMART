@@ -162,7 +162,9 @@ async function cargarSocios() {
         
         if (!response.ok) throw new Error('Error al cargar socios');
         
-        socios = await response.json();
+        const data = await response.json();
+        // Manejar respuesta paginada o array directo
+        socios = Array.isArray(data) ? data : (data.socios || []);
         llenarSelectSocios();
         
     } catch (error) {
@@ -181,7 +183,9 @@ async function cargarCuentas() {
         
         if (!response.ok) throw new Error('Error al cargar cuentas');
         
-        cuentas = await response.json();
+        const data = await response.json();
+        // Manejar respuesta paginada o array directo
+        cuentas = Array.isArray(data) ? data : (data.cuentas || []);
         
     } catch (error) {
         console.error('Error:', error);
@@ -764,13 +768,18 @@ async function cambiarEstadoPrestamo(idPrestamo, nuevoEstado) {
     
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/api/prestamos/${idPrestamo}`, {
+        const endpoint = `${API_URL}/api/prestamos/${idPrestamo}/${accion}`;
+        
+        const response = await fetch(endpoint, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ estado: nuevoEstado })
+            body: JSON.stringify({ 
+                monto_aprobado: prestamoActual ? prestamoActual.monto : undefined,
+                motivo: 'Rechazado por administrador'
+            })
         });
         
         if (!response.ok) throw new Error(`Error al ${accion} préstamo`);
@@ -779,7 +788,12 @@ async function cambiarEstadoPrestamo(idPrestamo, nuevoEstado) {
         cerrarModalDetalles();
         cargarPrestamos();
         
-        // Si fue aprobado, desembolsar a la cuenta
+        // Si fue aprobado, desembolsar a la cuenta (ya lo hace el backend si se implementa ahí, pero aquí lo tenemos separado)
+        // En el controlador aprobarPrestamo NO hace el desembolso automáticamente en la cuenta, solo cambia estado.
+        // Pero el frontend tiene la función desembolsarPrestamo.
+        // Vamos a mantener la lógica del frontend de llamar a desembolsar si es necesario, 
+        // aunque idealmente debería ser una transacción en el backend.
+        
         if (nuevoEstado === 'aprobado') {
             const prestamo = prestamos.find(p => p.id === idPrestamo);
             if (prestamo) {

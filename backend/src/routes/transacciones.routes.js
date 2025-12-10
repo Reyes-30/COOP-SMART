@@ -1,22 +1,22 @@
 /**
- * Rutas de Pagos
+ * Rutas de Transacciones
  */
 
 const express = require('express');
 const router = express.Router();
-const pagosController = require('../controllers/pagos.controller');
+const transaccionesController = require('../controllers/transacciones.controller');
 const { verificarToken, verificarRol } = require('../middlewares/auth');
 
 // Todas las rutas requieren autenticación
 router.use(verificarToken);
 
-// Obtener todos los pagos
-router.get('/', pagosController.obtenerPagos);
+// Obtener todas las transacciones
+router.get('/', transaccionesController.obtenerTransacciones);
 
-// Registrar un nuevo pago (solo admin y cajero)
+// Crear una nueva transacción (solo admin y cajero)
 router.post('/', 
   verificarRol('administrador', 'cajero'),
-  pagosController.registrarPago
+  transaccionesController.crearTransaccion
 );
 
 module.exports = router;

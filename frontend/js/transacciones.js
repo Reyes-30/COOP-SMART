@@ -191,7 +191,9 @@ async function cargarCuentas() {
         
         if (!response.ok) throw new Error('Error al cargar cuentas');
         
-        cuentas = await response.json();
+        const data = await response.json();
+        // Manejar respuesta paginada o array directo
+        cuentas = Array.isArray(data) ? data : (data.cuentas || []);
         llenarSelectCuentas();
         llenarFiltroCuentas();
         
@@ -211,7 +213,9 @@ async function cargarSocios() {
         
         if (!response.ok) throw new Error('Error al cargar socios');
         
-        socios = await response.json();
+        const data = await response.json();
+        // Manejar respuesta paginada o array directo
+        socios = Array.isArray(data) ? data : (data.socios || []);
         
     } catch (error) {
         console.error('Error:', error);
@@ -368,8 +372,11 @@ function aplicarFiltros() {
     });
     
     // Actualizar contador
-    document.getElementById('resultsCount').textContent = 
-        `${transaccionesFiltradas.length} transacciones encontradas`;
+    const resultsCount = document.getElementById('resultsCount');
+    if (resultsCount) {
+        resultsCount.textContent = 
+            `${transaccionesFiltradas.length} transacciones encontradas`;
+    }
     
     // Resetear paginación
     paginaActual = 1;
@@ -671,6 +678,18 @@ async function handleNuevaTransaccion(e) {
     try {
         const token = localStorage.getItem('token');
         
+        // Preparar datos
+        const data = {
+            id_cuenta: idCuenta,
+            tipo: tipo,
+            monto: monto,
+            descripcion: descripcion
+        };
+
+        if (tipo === 'transferencia') {
+            data.id_cuenta_destino = parseInt(formData.get('id_cuenta_destino'));
+        }
+
         // Crear transacción
         const responseTransaccion = await fetch(`${API_URL}/api/transacciones`, {
             method: 'POST',
@@ -678,65 +697,12 @@ async function handleNuevaTransaccion(e) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({
-                id_cuenta: idCuenta,
-                tipo: tipo,
-                monto: monto,
-                descripcion: descripcion
-            })
+            body: JSON.stringify(data)
         });
         
         if (!responseTransaccion.ok) {
             const error = await responseTransaccion.json();
             throw new Error(error.message || 'Error al crear transacción');
-        }
-        
-        // Actualizar saldo de cuenta
-        const nuevoSaldo = tipo === 'deposito' 
-            ? parseFloat(cuenta.saldo) + monto 
-            : parseFloat(cuenta.saldo) - monto;
-        
-        await fetch(`${API_URL}/api/cuentas/${idCuenta}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ saldo: nuevoSaldo })
-        });
-        
-        // Si es transferencia, actualizar cuenta destino
-        if (tipo === 'transferencia') {
-            const idCuentaDestino = parseInt(formData.get('id_cuenta_destino'));
-            const cuentaDestino = cuentas.find(c => c.id === idCuentaDestino);
-            
-            if (cuentaDestino) {
-                const nuevoSaldoDestino = parseFloat(cuentaDestino.saldo) + monto;
-                
-                await fetch(`${API_URL}/api/cuentas/${idCuentaDestino}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ saldo: nuevoSaldoDestino })
-                });
-                
-                // Crear transacción de depósito en cuenta destino
-                await fetch(`${API_URL}/api/transacciones`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        id_cuenta: idCuentaDestino,
-                        tipo: 'deposito',
-                        monto: monto,
-                        descripcion: `Transferencia desde ${cuenta.numero_cuenta}`
-                    })
-                });
-            }
         }
         
         mostrarExito('Transacción procesada exitosamente');

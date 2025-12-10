@@ -86,15 +86,21 @@ function translateRole(role) {
 function setupEventListeners() {
     // Logout
     const logoutBtn = document.getElementById('logoutBtn');
-    logoutBtn.addEventListener('click', handleLogout);
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
     
     // Toggle sidebar
     const sidebarToggle = document.getElementById('sidebarToggle');
-    sidebarToggle.addEventListener('click', toggleSidebar);
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', toggleSidebar);
+    }
     
     // Mobile menu
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    mobileMenuBtn.addEventListener('click', toggleMobileSidebar);
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', toggleMobileSidebar);
+    }
     
     // Quick actions
     setupQuickActions();
@@ -162,7 +168,9 @@ async function loadKPIData() {
         });
         
         if (sociosResponse.ok) {
-            const socios = await sociosResponse.json();
+            const sociosData = await sociosResponse.json();
+            // Manejar respuesta paginada o array directo
+            const socios = Array.isArray(sociosData) ? sociosData : (sociosData.socios || []);
             dashboardData.totalSocios = socios.length;
             updateKPI('totalSocios', dashboardData.totalSocios);
         }
@@ -175,7 +183,9 @@ async function loadKPIData() {
         });
         
         if (cuentasResponse.ok) {
-            const cuentas = await cuentasResponse.json();
+            const cuentasData = await cuentasResponse.json();
+            // Manejar respuesta paginada o array directo
+            const cuentas = Array.isArray(cuentasData) ? cuentasData : (cuentasData.cuentas || []);
             dashboardData.saldoTotal = cuentas.reduce((sum, cuenta) => sum + parseFloat(cuenta.saldo || 0), 0);
             updateKPI('saldoTotal', formatCurrency(dashboardData.saldoTotal));
         }
@@ -204,8 +214,17 @@ async function loadKPIData() {
             const transacciones = await transaccionesResponse.json();
             const hoy = new Date().toISOString().split('T')[0];
             dashboardData.transaccionesHoy = transacciones.filter(t => {
-                const fechaTransaccion = new Date(t.fecha).toISOString().split('T')[0];
-                return fechaTransaccion === hoy;
+                try {
+                    const fechaTransaccion = new Date(t.fecha);
+                    // Validar que la fecha es válida
+                    if (isNaN(fechaTransaccion.getTime())) {
+                        return false;
+                    }
+                    return fechaTransaccion.toISOString().split('T')[0] === hoy;
+                } catch (error) {
+                    console.warn('Fecha inválida en transacción:', t);
+                    return false;
+                }
             }).length;
             updateKPI('transaccionesHoy', dashboardData.transaccionesHoy);
         }
@@ -222,7 +241,7 @@ async function loadKPIData() {
 
 async function loadTransactions() {
     const token = localStorage.getItem('token');
-    const tbody = document.getElementById('transactionsBody');
+    const tbody = document.getElementById('transaccionesTableBody');
     
     try {
         const response = await fetch(`${API_URL}/api/transacciones`, {
@@ -247,21 +266,30 @@ async function loadTransactions() {
         
     } catch (error) {
         console.error('Error cargando transacciones:', error);
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" style="text-align: center; padding: 2rem; color: var(--gray-500);">
-                    <p>No se pudieron cargar las transacciones</p>
-                    <button onclick="loadTransactions()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--primary-blue); color: white; border: none; border-radius: 6px; cursor: pointer;">
-                        Reintentar
-                    </button>
-                </td>
-            </tr>
-        `;
+        const tbody = document.getElementById('transaccionesTableBody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 2rem; color: var(--gray-500);">
+                        <p>No se pudieron cargar las transacciones</p>
+                        <button onclick="loadTransactions()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--primary-blue); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                            Reintentar
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
     }
 }
 
 function displayTransactions(transacciones) {
-    const tbody = document.getElementById('transactionsBody');
+    const tbody = document.getElementById('transaccionesTableBody');
+    
+    // Validar que el elemento existe
+    if (!tbody) {
+        console.warn('Elemento transaccionesTableBody no encontrado en el DOM');
+        return;
+    }
     
     if (transacciones.length === 0) {
         tbody.innerHTML = `

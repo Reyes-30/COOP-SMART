@@ -117,13 +117,31 @@ const crearSocio = async (req, res) => {
       tipo,
       ocupacion,
       lugar_trabajo,
-      ingresos_mensuales
+      ingresos_mensuales,
+      fecha_ingreso,
+      notas
     } = req.body;
 
-    // Validar campos requeridos
-    if (!identidad || !nombre || !apellido || !fecha_nacimiento || !genero || !telefono || !direccion || !ciudad || !departamento) {
+    // Validación de campos según los marcados como obligatorios en el frontend
+    // Obligatorios: identidad, nombre, apellido, fecha_nacimiento, genero, celular, direccion, ciudad, departamento
+    // Adicional: fecha_ingreso obligatorio cuando tipo === 'socio'
+    const missing = [];
+    if (!identidad) missing.push('identidad');
+    if (!nombre) missing.push('nombre');
+    if (!apellido) missing.push('apellido');
+    if (!fecha_nacimiento) missing.push('fecha_nacimiento');
+    if (!genero) missing.push('genero');
+    if (!celular) missing.push('celular');
+    if (!direccion) missing.push('direccion');
+    if (!ciudad) missing.push('ciudad');
+    if (!departamento) missing.push('departamento');
+    const tipoRegistro = tipo || 'socio';
+    if (tipoRegistro === 'socio' && !fecha_ingreso) missing.push('fecha_ingreso');
+
+    if (missing.length > 0) {
       return res.status(400).json({
-        error: 'Todos los campos obligatorios deben ser completados'
+        error: 'Todos los campos obligatorios deben ser completados',
+        campos_faltantes: missing
       });
     }
 
@@ -143,16 +161,18 @@ const crearSocio = async (req, res) => {
       apellido,
       fecha_nacimiento,
       genero,
-      telefono,
+      telefono, // opcional
       celular,
-      email,
+      email, // opcional
       direccion,
       ciudad,
       departamento,
-      tipo: tipo || 'socio',
-      ocupacion,
-      lugar_trabajo,
-      ingresos_mensuales
+      tipo: tipoRegistro,
+      ocupacion, // opcional
+      lugar_trabajo, // opcional
+      ingresos_mensuales, // opcional
+      fecha_ingreso,
+      notas // opcional
     });
 
     res.status(201).json({

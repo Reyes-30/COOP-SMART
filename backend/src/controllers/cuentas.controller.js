@@ -263,5 +263,36 @@ module.exports = {
   obtenerCuentaPorId,
   crearCuenta,
   depositar,
-  retirar
+  retirar,
+  /**
+   * Actualizar campos de la cuenta (estado, tasa_interes, tipo_cuenta)
+   */
+  actualizarCuenta: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { estado, tasa_interes, tipo_cuenta, saldo } = req.body;
+
+      const cuenta = await Cuenta.findByPk(id);
+      if (!cuenta) {
+        return res.status(404).json({ error: 'Cuenta no encontrada' });
+      }
+
+      const updates = {};
+      if (estado) updates.estado = estado;
+      if (tasa_interes !== undefined) updates.tasa_interes = parseFloat(tasa_interes);
+      if (tipo_cuenta) updates.tipo_cuenta = tipo_cuenta;
+
+      // No permitir actualización directa de saldo, usar transacciones
+      if (saldo !== undefined) {
+        console.warn('Intento de actualización directa de saldo bloqueado');
+      }
+
+      await cuenta.update(updates);
+
+      res.json({ mensaje: 'Cuenta actualizada exitosamente', cuenta });
+    } catch (error) {
+      console.error('Error al actualizar cuenta:', error);
+      res.status(500).json({ error: 'Error al actualizar cuenta' });
+    }
+  }
 };

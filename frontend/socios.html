@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Socios y Clientes - COOP-SMART</title>
-    <link rel="stylesheet" href="pagos.css">
-    <link rel="stylesheet" href="socios.css">
+    <link rel="stylesheet" href="css/pagos.css">
+    <link rel="stylesheet" href="css/socios.css">
 </head>
 <body>
     <!-- Header -->
@@ -69,6 +69,7 @@
                     <div class="stat-count" id="countSociosActivos">0 activos</div>
                 </div>
             </div>
+            
             <div class="stat-card stat-gray">
                 <div class="stat-icon">👤</div>
                 <div class="stat-info">
@@ -77,6 +78,7 @@
                     <div class="stat-count" id="countClientesActivos">0 activos</div>
                 </div>
             </div>
+            
             <div class="stat-card stat-green">
                 <div class="stat-icon">✅</div>
                 <div class="stat-info">
@@ -85,6 +87,7 @@
                     <div class="stat-count">En total</div>
                 </div>
             </div>
+            
             <div class="stat-card stat-orange">
                 <div class="stat-icon">📅</div>
                 <div class="stat-info">
@@ -95,28 +98,46 @@
             </div>
         </div>
 
-        <!-- Filters and Actions -->
+        <!-- Filters Section -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+                <h3>🔍 Filtros de Búsqueda</h3>
+            </div>
+            <div class="card-body" style="padding: 1.5rem;">
+                <div style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: flex-end;">
+                    <div class="filter-group">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4B5563;">Tipo de Registro</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="filter-btn active" data-filter="todos">
+                                Todos <span class="filter-count" id="countTodos">0</span>
+                            </button>
+                            <button class="filter-btn" data-filter="socio">
+                                👥 Socios <span class="filter-count" id="countSocios">0</span>
+                            </button>
+                            <button class="filter-btn" data-filter="cliente">
+                                👤 Clientes <span class="filter-count" id="countClientes">0</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4B5563;">Estado</label>
+                        <select class="filter-select" id="estadoFilter" style="min-width: 200px; padding: 0.5rem; border-radius: 8px; border: 1px solid #E5E7EB;">
+                            <option value="todos">Todos los estados</option>
+                            <option value="activo">Activos</option>
+                            <option value="inactivo">Inactivos</option>
+                            <option value="suspendido">Suspendidos</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Section -->
         <div class="card">
             <div class="card-header">
                 <h3>📋 Listado de Socios y Clientes</h3>
-                <div class="toolbar">
-                    <div class="filter-group">
-                        <button class="filter-btn active" data-filter="todos">
-                            Todos <span class="filter-count" id="countTodos">0</span>
-                        </button>
-                        <button class="filter-btn" data-filter="socio">
-                            👥 Socios <span class="filter-count" id="countSocios">0</span>
-                        </button>
-                        <button class="filter-btn" data-filter="cliente">
-                            👤 Clientes <span class="filter-count" id="countClientes">0</span>
-                        </button>
-                    </div>
-                    <select class="filter-select" id="estadoFilter">
-                        <option value="todos">Todos los estados</option>
-                        <option value="activo">Activos</option>
-                        <option value="inactivo">Inactivos</option>
-                        <option value="suspendido">Suspendidos</option>
-                    </select>
+                <div class="toolbar" style="margin: 0; padding: 0; box-shadow: none; background: none;">
                     <button class="btn-secondary" id="btnExportar">
                         📥 Exportar
                     </button>
@@ -221,13 +242,13 @@
                         <h3 class="section-title">Información de Contacto</h3>
                         <div class="form-grid">
                             <div class="form-group">
-                                <label for="telefono">Teléfono *</label>
-                                <input type="tel" id="telefono" name="telefono" required 
+                                <label for="celular">Celular *</label>
+                                <input type="tel" id="celular" name="celular" required 
                                        placeholder="0000-0000">
                             </div>
                             <div class="form-group">
-                                <label for="celular">Celular</label>
-                                <input type="tel" id="celular" name="celular" 
+                                <label for="telefono">Teléfono</label>
+                                <input type="tel" id="telefono" name="telefono" 
                                        placeholder="0000-0000">
                             </div>
                             <div class="form-group">
@@ -393,7 +414,6 @@
         </div>
     </div>
 
-    <script src="dashboard.js"></script>
-    <script src="socios.js"></script>
+    <script src="js/socios.js"></script>
 </body>
 </html>

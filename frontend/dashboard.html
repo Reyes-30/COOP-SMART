@@ -1,10 +1,13 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - COOP-SMART</title>
-    <link rel="stylesheet" href="pagos.css">
+    <link rel="stylesheet" href="css/pagos.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <!-- Chart.js para gráficas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -19,8 +22,8 @@
             </div>
             
             <div class="header-search">
-                <input type="text" id="globalSearch" placeholder="Buscar por préstamo, socio, referencia..." class="search-input">
-                <span class="search-icon">�</span>
+                <input type="text" id="globalSearch" placeholder="Buscar..." class="search-input">
+                <span class="search-icon">🔍</span>
             </div>
             
             <div class="user-menu">
@@ -42,7 +45,7 @@
         <a href="cuentas.html" class="nav-link">💳 Cuentas</a>
         <a href="prestamos.html" class="nav-link">💵 Préstamos</a>
         <a href="transacciones.html" class="nav-link">📝 Transacciones</a>
-        <a href="pagos.html" class="nav-link">� Pagos</a>
+        <a href="pagos.html" class="nav-link">💸 Pagos</a>
         <a href="reportes.html" class="nav-link">📈 Reportes</a>
     </nav>
 
@@ -76,7 +79,7 @@
             </div>
             
             <div class="stat-card stat-orange">
-                <div class="stat-icon">�</div>
+                <div class="stat-icon">💵</div>
                 <div class="stat-info">
                     <div class="stat-label">Préstamos Activos</div>
                     <div class="stat-value" id="prestamosActivos">0</div>
@@ -85,7 +88,7 @@
             </div>
             
             <div class="stat-card stat-purple">
-                <div class="stat-icon">�</div>
+                <div class="stat-icon">📝</div>
                 <div class="stat-info">
                     <div class="stat-label">Transacciones Hoy</div>
                     <div class="stat-value" id="transaccionesHoy">0</div>
@@ -95,15 +98,15 @@
         </div>
 
         <!-- Gráficas -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <div class="dashboard-charts">
             <div class="card">
                 <div class="card-header">
                     <h3>📈 Movimientos Mensuales</h3>
                 </div>
-                <div style="padding: 2rem; text-align: center; color: #6B7280;">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
+                <div class="chart-placeholder">
+                    <div class="chart-placeholder-icon">📊</div>
                     <p>Gráfico de movimientos mensuales</p>
-                    <p style="font-size: 0.85rem;">(Se implementará con Chart.js)</p>
+                    <small>(Se implementará con Chart.js)</small>
                 </div>
             </div>
 
@@ -111,10 +114,10 @@
                 <div class="card-header">
                     <h3>🥧 Distribución de Cuentas</h3>
                 </div>
-                <div style="padding: 2rem; text-align: center; color: #6B7280;">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
+                <div class="chart-placeholder">
+                    <div class="chart-placeholder-icon">📊</div>
                     <p>Gráfico de distribución de cuentas</p>
-                    <p style="font-size: 0.85rem;">(Se implementará con Chart.js)</p>
+                    <small>(Se implementará con Chart.js)</small>
                 </div>
             </div>
         </div>
@@ -142,10 +145,10 @@
                     </thead>
                     <tbody id="transaccionesTableBody">
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 3rem;">
-                                <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
-                                <p style="color: #6B7280; font-size: 1rem;">No hay transacciones recientes</p>
-                                <button class="btn-primary" onclick="window.location.href='transacciones.html'" style="margin-top: 1rem;">
+                            <td colspan="6" class="recent-transactions-empty">
+                                <div class="recent-transactions-empty-icon">📭</div>
+                                <p>No hay transacciones recientes</p>
+                                <button class="btn-primary" onclick="window.location.href='transacciones.html'">
                                     Ver todas las transacciones
                                 </button>
                             </td>
@@ -156,31 +159,31 @@
         </div>
 
         <!-- Acciones Rápidas -->
-        <div class="card" style="margin-top: 2rem;">
+        <div class="card quick-actions-container">
             <div class="card-header">
                 <h3>⚡ Acciones Rápidas</h3>
             </div>
-            <div style="padding: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                <button class="btn-primary" onclick="window.location.href='socios.html'" style="padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
-                    <span style="font-size: 2rem;">�</span>
-                    <span>Nuevo Socio</span>
+            <div class="quick-actions-grid">
+                <button class="quick-action-btn action-socios" onclick="window.location.href='socios.html'">
+                    <span class="quick-action-icon">👥</span>
+                    <span class="quick-action-text">Nuevo Socio</span>
                 </button>
-                <button class="btn-primary" onclick="window.location.href='cuentas.html'" style="padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
-                    <span style="font-size: 2rem;">�</span>
-                    <span>Nueva Cuenta</span>
+                <button class="quick-action-btn action-cuentas" onclick="window.location.href='cuentas.html'">
+                    <span class="quick-action-icon">💳</span>
+                    <span class="quick-action-text">Nueva Cuenta</span>
                 </button>
-                <button class="btn-primary" onclick="window.location.href='prestamos.html'" style="padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
-                    <span style="font-size: 2rem;">�</span>
-                    <span>Nuevo Préstamo</span>
+                <button class="quick-action-btn action-prestamos" onclick="window.location.href='prestamos.html'">
+                    <span class="quick-action-icon">💵</span>
+                    <span class="quick-action-text">Nuevo Préstamo</span>
                 </button>
-                <button class="btn-primary" onclick="window.location.href='transacciones.html'" style="padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);">
-                    <span style="font-size: 2rem;">�</span>
-                    <span>Nueva Transacción</span>
+                <button class="quick-action-btn action-transacciones" onclick="window.location.href='transacciones.html'">
+                    <span class="quick-action-icon">📝</span>
+                    <span class="quick-action-text">Nueva Transacción</span>
                 </button>
             </div>
         </div>
     </main>
 
-    <script src="dashboard.js"></script>
+    <script src="js/dashboard.js"></script>
 </body>
 </html>

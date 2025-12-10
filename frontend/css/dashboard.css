@@ -1,0 +1,97 @@
+﻿/* ===================================
+   DASHBOARD - ESTILOS ESPECÍFICOS
+   =================================== */
+
+/* Gráficas del Dashboard */
+.dashboard-charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.chart-placeholder {
+    padding: 2rem;
+    text-align: center;
+    color: #6B7280;
+}
+
+.chart-placeholder-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+/* Transacciones Recientes */
+.recent-transactions-empty {
+    text-align: center;
+    padding: 3rem;
+}
+
+.recent-transactions-empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.recent-transactions-empty p {
+    color: #6B7280;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Acciones Rápidas */
+.quick-actions-container {
+    margin-top: 2rem;
+}
+
+.quick-actions-grid {
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    border-radius: 12px;
+    text-decoration: none;
+    color: white;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    border: none;
+    cursor: pointer;
+}
+
+.quick-action-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px rgba(0,0,0,0.2);
+}
+
+.quick-action-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.quick-action-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.action-socios {
+    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+}
+
+.action-cuentas {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+}
+
+.action-prestamos {
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+}
+
+.action-transacciones {
+    background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+}

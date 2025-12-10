@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Préstamos API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #3B82F6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563EB;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background: #f0f0f0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test API de Préstamos</h1>
+        <p>Este script prueba la conexión con el endpoint /api/prestamos</p>
+        
+        <div>
+            <button onclick="testPrestamos()">🔍 Probar GET /api/prestamos</button>
+            <button onclick="testPrestamosDetalle()">📋 Ver Detalles de Respuesta</button>
+            <button onclick="testAuth()">🔐 Verificar Token</button>
+            <button onclick="clearResults()">🗑️ Limpiar</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testAuth() {
+            clearResults();
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            
+            log('🔐 VERIFICACIÓN DE AUTENTICACIÓN\n', 'info');
+            log(`Token: ${token ? '✅ Existe' : '❌ No existe'}`, token ? 'success' : 'error');
+            
+            if (user) {
+                try {
+                    const userData = JSON.parse(user);
+                    log(`Usuario: ${JSON.stringify(userData, null, 2)}`, 'success');
+                } catch (e) {
+                    log(`Error al parsear usuario: ${e.message}`, 'error');
+                }
+            } else {
+                log('Usuario: ❌ No existe', 'error');
+            }
+        }
+
+        async function testPrestamos() {
+            clearResults();
+            log('🔄 Iniciando prueba de /api/prestamos...\n', 'info');
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                log('❌ ERROR: No hay token en localStorage', 'error');
+                log('Por favor, inicia sesión primero en login.html', 'error');
+                return;
+            }
+
+            log('✅ Token encontrado', 'success');
+            log('📡 Haciendo petición a: ' + API_URL + '/api/prestamos\n', 'info');
+
+            try {
+                const response = await fetch(`${API_URL}/api/prestamos`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                log(`📊 Status: ${response.status} ${response.statusText}`, 
+                    response.ok ? 'success' : 'error');
+                
+                const contentType = response.headers.get('content-type');
+                log(`📝 Content-Type: ${contentType}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Respuesta exitosa!\n`, 'success');
+                    log(`📦 Datos recibidos (${Array.isArray(data) ? data.length : 'N/A'} préstamos):\n${JSON.stringify(data, null, 2)}`, 'success');
+                    
+                    if (Array.isArray(data) && data.length === 0) {
+                        log('\n⚠️ IMPORTANTE: La tabla de préstamos está VACÍA', 'error');
+                        log('Solución: Crear algunos préstamos de prueba en el módulo de préstamos', 'info');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Error en la respuesta:\n${errorText}`, 'error');
+                }
+
+            } catch (error) {
+                log(`❌ Error en la petición:\n${error.message}`, 'error');
+                log(`Stack: ${error.stack}`, 'error');
+            }
+        }
+
+        async function testPrestamosDetalle() {
+            clearResults();
+            log('🔍 ANÁLISIS DETALLADO\n', 'info');
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                log('❌ No hay token', 'error');
+                return;
+            }
+
+            try {
+                log('1️⃣ Probando conectividad al servidor...', 'info');
+                const ping = await fetch(`${API_URL}/api/auth/perfil`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                log(`   Servidor: ${ping.ok ? '✅ Respondiendo' : '❌ No responde'}`, 
+                    ping.ok ? 'success' : 'error');
+
+                log('\n2️⃣ Probando endpoint de préstamos...', 'info');
+                const response = await fetch(`${API_URL}/api/prestamos`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                log(`   Status: ${response.status}`, response.ok ? 'success' : 'error');
+                log(`   StatusText: ${response.statusText}`, 'info');
+                log(`   OK: ${response.ok}`, 'info');
+                log(`   Headers:`, 'info');
+                for (const [key, value] of response.headers.entries()) {
+                    log(`     ${key}: ${value}`, 'info');
+                }
+
+                const data = await response.json();
+                log(`\n3️⃣ Datos recibidos:`, 'info');
+                log(`   Tipo: ${Array.isArray(data) ? 'Array' : typeof data}`, 'info');
+                log(`   Cantidad: ${Array.isArray(data) ? data.length : 'N/A'}`, 'info');
+                log(`   Contenido:\n${JSON.stringify(data, null, 2)}`, 
+                    Array.isArray(data) && data.length > 0 ? 'success' : 'error');
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-verificar al cargar
+        window.addEventListener('DOMContentLoaded', () => {
+            log('✅ Script cargado. Haz clic en los botones para probar.', 'success');
+        });
+    </script>
+</body>
+</html>

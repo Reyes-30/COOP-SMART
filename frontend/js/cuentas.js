@@ -115,6 +115,14 @@ function initEventListeners() {
             }
         });
     });
+
+    // Modal Editar Cuenta
+    const btnCloseEditar = document.getElementById('btnCloseEditar');
+    const btnCancelarEditar = document.getElementById('btnCancelarEditar');
+    const formEditar = document.getElementById('formEditarCuenta');
+    if (btnCloseEditar) btnCloseEditar.addEventListener('click', cerrarModalEditarCuenta);
+    if (btnCancelarEditar) btnCancelarEditar.addEventListener('click', cerrarModalEditarCuenta);
+    if (formEditar) formEditar.addEventListener('submit', handleEditarCuenta);
 }
 
 // ============================================
@@ -134,7 +142,9 @@ async function cargarCuentas() {
         
         if (!response.ok) throw new Error('Error al cargar cuentas');
         
-        cuentas = await response.json();
+        const data = await response.json();
+        // Manejar respuesta paginada o array directo
+        cuentas = Array.isArray(data) ? data : (data.cuentas || []);
         actualizarEstadisticas();
         renderizarCuentas();
         
@@ -157,7 +167,9 @@ async function cargarSocios() {
         
         if (!response.ok) throw new Error('Error al cargar socios');
         
-        socios = await response.json();
+        const data = await response.json();
+        // Manejar respuesta paginada o array directo
+        socios = Array.isArray(data) ? data : (data.socios || []);
         llenarSelectSocios();
         
     } catch (error) {
@@ -554,15 +566,8 @@ async function handleTransaccion(e) {
     }
     
     try {
-        // 1. Crear la transacción
+        // 1. Crear la transacción (el backend actualiza el saldo automáticamente)
         await crearTransaccion(idCuenta, tipo, monto, descripcion);
-        
-        // 2. Actualizar saldo de la cuenta
-        const nuevoSaldo = tipo === 'deposito' 
-            ? parseFloat(cuenta.saldo) + monto 
-            : parseFloat(cuenta.saldo) - monto;
-        
-        await actualizarSaldoCuenta(idCuenta, nuevoSaldo);
         
         mostrarExito(`${capitalizar(tipo)} realizado exitosamente`);
         cerrarModalTransaccion();
@@ -763,9 +768,46 @@ function imprimirEstado() {
 async function editarCuenta(idCuenta) {
     const cuenta = cuentas.find(c => c.id === idCuenta);
     if (!cuenta) return;
+    // Abrir modal y llenar datos
+    document.getElementById('edit_id_cuenta').value = cuenta.id;
+    document.getElementById('edit_tasa_interes').value = (parseFloat(cuenta.tasa_interes) || 0).toFixed(2);
+    document.getElementById('edit_estado').value = cuenta.estado;
+    // Seleccionar tipo
+    const radios = document.querySelectorAll('input[name="edit_tipo_cuenta"]');
+    radios.forEach(r => { r.checked = (r.value === cuenta.tipo_cuenta); });
     
-    // Por ahora solo mostrar alerta
-    mostrarExito('Función de edición en desarrollo');
+    document.getElementById('modalEditarCuenta').classList.add('show');
+}
+
+function cerrarModalEditarCuenta() {
+    document.getElementById('modalEditarCuenta').classList.remove('show');
+}
+
+async function handleEditarCuenta(e) {
+    e.preventDefault();
+    const idCuenta = parseInt(document.getElementById('edit_id_cuenta').value);
+    const tipo_cuenta = document.querySelector('input[name="edit_tipo_cuenta"]:checked')?.value;
+    const tasa_interes = parseFloat(document.getElementById('edit_tasa_interes').value) || 0;
+    const estado = document.getElementById('edit_estado').value;
+
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/api/cuentas/${idCuenta}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ tipo_cuenta, tasa_interes, estado })
+        });
+        if (!response.ok) throw new Error('Error al actualizar cuenta');
+        mostrarExito('Cuenta actualizada exitosamente');
+        cerrarModalEditarCuenta();
+        cargarCuentas();
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarError('No se pudo actualizar la cuenta');
+    }
 }
 
 async function toggleEstadoCuenta(idCuenta) {

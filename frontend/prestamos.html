@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Préstamos - COOP-SMART</title>
-    <link rel="stylesheet" href="pagos.css">
-    <link rel="stylesheet" href="prestamos.css">
+    <link rel="stylesheet" href="css/pagos.css">
+    <link rel="stylesheet" href="css/prestamos.css">
 </head>
 <body>
     <!-- Header -->
@@ -62,13 +62,14 @@
         <!-- Stats Cards -->
         <div class="stats-grid">
             <div class="stat-card stat-blue">
-                <div class="stat-icon">�</div>
+                <div class="stat-icon">💵</div>
                 <div class="stat-info">
                     <div class="stat-label">Total Prestado</div>
                     <div class="stat-value" id="totalPrestado">L. 0.00</div>
                     <div class="stat-count" id="numPrestamos">0 préstamos</div>
                 </div>
             </div>
+            
             <div class="stat-card stat-green">
                 <div class="stat-icon">✅</div>
                 <div class="stat-info">
@@ -77,6 +78,7 @@
                     <div class="stat-count">En curso</div>
                 </div>
             </div>
+            
             <div class="stat-card stat-orange">
                 <div class="stat-icon">⏳</div>
                 <div class="stat-info">
@@ -85,6 +87,7 @@
                     <div class="stat-count">Por revisar</div>
                 </div>
             </div>
+            
             <div class="stat-card stat-red">
                 <div class="stat-icon">⚠️</div>
                 <div class="stat-info">
@@ -429,7 +432,6 @@
         </div>
     </div>
 
-    <script src="dashboard.js"></script>
-    <script src="prestamos.js"></script>
+    <script src="js/prestamos.js"></script>
 </body>
 </html>

@@ -196,6 +196,13 @@ async function cargarPagos() {
         
         pagos = await response.json();
         
+        // Normalizar campos para compatibilidad
+        pagos = pagos.map(p => ({
+            ...p,
+            monto_pagado: p.monto || p.monto_pagado || 0,
+            numero_cuota: p.numero_cuota || 0
+        }));
+        
         // Ordenar por fecha descendente
         pagos.sort((a, b) => new Date(b.fecha_pago) - new Date(a.fecha_pago));
         
@@ -220,11 +227,17 @@ async function cargarSocios() {
         
         if (!response.ok) throw new Error('Error al cargar socios');
         
-        socios = await response.json();
+        const data = await response.json();
+        
+        // El endpoint retorna un objeto con paginación: { socios: [], total, pagina, ... }
+        // Extraer solo el array de socios
+        socios = Array.isArray(data) ? data : (data.socios || []);
+        
         llenarFiltroSocios();
         
     } catch (error) {
         console.error('Error:', error);
+        socios = []; // Asegurar que sea un array vacío en caso de error
     }
 }
 
@@ -849,14 +862,11 @@ async function handleRegistrarPago(e) {
             },
             body: JSON.stringify({
                 id_prestamo: idPrestamo,
-                numero_cuota: numeroCuota,
-                monto_pagado: montoPagado,
-                monto_capital: montoCapital,
-                monto_interes: montoInteres,
-                fecha_pago: fechaPago,
+                monto: montoPagado, // Backend espera 'monto'
                 metodo_pago: metodoPago,
                 referencia: referencia,
                 notas: notas
+                // Backend calcula capital e interés automáticamente
             })
         });
         
@@ -865,26 +875,24 @@ async function handleRegistrarPago(e) {
             throw new Error(error.message || 'Error al registrar pago');
         }
         
-        const pagoCreado = await response.json();
-        
-        // Verificar si el préstamo está completamente pagado
-        const prestamo = prestamos.find(p => p.id === idPrestamo);
-        const pagosRealizados = pagos.filter(p => p.id_prestamo === idPrestamo).length + 1;
-        
-        if (pagosRealizados >= prestamo.plazo_meses) {
-            // Actualizar estado del préstamo a "pagado"
-            await fetch(`${API_URL}/api/prestamos/${idPrestamo}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ estado: 'pagado' })
-            });
-        }
+        const resultado = await response.json();
         
         mostrarExito('Pago registrado exitosamente');
         cerrarModalRegistrarPago();
+        
+        // Recargar datos
+        cargarDatos();
+        
+        // Mostrar recibo
+        if (resultado.pago && resultado.pago.id) {
+            verRecibo(resultado.pago.id);
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarError(error.message || 'Error al registrar el pago');
+    }
+}
         cargarDatos();
         
         // Mostrar recibo

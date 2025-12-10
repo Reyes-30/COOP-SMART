@@ -25,6 +25,12 @@ const Pago = sequelize.define('Pago', {
       key: 'id'
     }
   },
+  numero_cuota: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1,
+    comment: 'Número de cuota del préstamo'
+  },
   monto: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,

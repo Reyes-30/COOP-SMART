@@ -70,17 +70,32 @@ function translateRole(role) {
 // ===================================
 function setupEventListeners() {
     // Logout
-    document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
     
     // Sidebar toggle
-    document.getElementById('sidebarToggle').addEventListener('click', () => {
-        document.getElementById('sidebar').classList.toggle('collapsed');
-    });
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar) {
+                sidebar.classList.toggle('collapsed');
+            }
+        });
+    }
     
     // Mobile menu
-    document.getElementById('mobileMenuBtn').addEventListener('click', () => {
-        document.getElementById('sidebar').classList.toggle('active');
-    });
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar) {
+                sidebar.classList.toggle('active');
+            }
+        });
+    }
     
     // Filtros
     document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -92,27 +107,57 @@ function setupEventListeners() {
         });
     });
     
-    document.getElementById('estadoFilter').addEventListener('change', (e) => {
-        currentEstadoFilter = e.target.value;
-        filterTable();
-    });
+    const estadoFilter = document.getElementById('estadoFilter');
+    if (estadoFilter) {
+        estadoFilter.addEventListener('change', (e) => {
+            currentEstadoFilter = e.target.value;
+            filterTable();
+        });
+    }
     
     // Búsqueda global
-    document.getElementById('globalSearch').addEventListener('input', (e) => {
-        searchTable(e.target.value);
-    });
+    const globalSearch = document.getElementById('globalSearch');
+    if (globalSearch) {
+        globalSearch.addEventListener('input', (e) => {
+            searchTable(e.target.value);
+        });
+    }
     
     // Botones
-    document.getElementById('btnNuevo').addEventListener('click', openNewModal);
-    document.getElementById('btnExportar').addEventListener('click', exportarDatos);
+    const btnNuevo = document.getElementById('btnNuevoSocio');
+    if (btnNuevo) {
+        btnNuevo.addEventListener('click', openNewModal);
+    }
+    
+    const btnExportar = document.getElementById('btnExportar');
+    if (btnExportar) {
+        btnExportar.addEventListener('click', exportarDatos);
+    }
     
     // Modal
-    document.getElementById('btnCloseModal').addEventListener('click', closeModal);
-    document.getElementById('btnCancelar').addEventListener('click', closeModal);
-    document.getElementById('formSocio').addEventListener('submit', handleSubmit);
+    const btnCloseModal = document.getElementById('btnCloseModal');
+    if (btnCloseModal) {
+        btnCloseModal.addEventListener('click', closeModal);
+    }
+    
+    const btnCancelar = document.getElementById('btnCancelar');
+    if (btnCancelar) {
+        btnCancelar.addEventListener('click', closeModal);
+    }
+    
+    const formSocio = document.getElementById('formSocio');
+    if (formSocio) {
+        formSocio.addEventListener('submit', handleSubmit);
+    }
+
+    // Validaciones y máscaras de entrada
+    setupInputValidations();
     
     // Modal Detalles
-    document.getElementById('btnCloseDetalles').addEventListener('click', closeDetallesModal);
+    const btnCloseDetalles = document.getElementById('btnCloseDetalles');
+    if (btnCloseDetalles) {
+        btnCloseDetalles.addEventListener('click', closeDetallesModal);
+    }
     
     // Tipo de registro (mostrar/ocultar sección de socio)
     document.querySelectorAll('input[name="tipo"]').forEach(radio => {
@@ -153,7 +198,9 @@ async function loadSociosData() {
         });
         
         if (response.ok) {
-            sociosData = await response.json();
+            const data = await response.json();
+            // Manejar respuesta paginada o array directo
+            sociosData = Array.isArray(data) ? data : (data.socios || []);
             updateStats();
             displaySocios(sociosData);
         } else {
@@ -370,13 +417,57 @@ function editSocio(id) {
 async function handleSubmit(e) {
     e.preventDefault();
     
+    // Validación de campos antes de enviar
+    const identidadEl = document.getElementById('identidad');
+    const telefonoEl = document.getElementById('telefono');
+    const celularEl = document.getElementById('celular');
+    const emailEl = document.getElementById('email');
+    const nombreEl = document.getElementById('nombre');
+    const apellidoEl = document.getElementById('apellido');
+    const direccionEl = document.getElementById('direccion');
+    const ciudadEl = document.getElementById('ciudad');
+    const departamentoEl = document.getElementById('departamento');
+
+    const identidad = identidadEl.value.trim();
+    const telefono = telefonoEl.value.trim();
+    const celular = celularEl.value.trim();
+    const email = emailEl.value.trim();
+
+    if (!/^[0-9]{4}-[0-9]{4}-[0-9]{5}$/.test(identidad)) {
+        showNotification('Identidad inválida. Formato: 0000-0000-00000', 'error');
+        identidadEl.focus();
+        return;
+    }
+    // Celular obligatorio
+    if (!/^[0-9]{4}-[0-9]{4}$/.test(celular)) {
+        showNotification('Celular inválido. Formato: 0000-0000', 'error');
+        celularEl.focus();
+        return;
+    }
+    // Teléfono opcional
+    if (telefono && !/^[0-9]{4}-[0-9]{4}$/.test(telefono)) {
+        showNotification('Teléfono inválido. Formato: 0000-0000', 'error');
+        telefonoEl.focus();
+        return;
+    }
+    if (email && !isValidEmail(email)) {
+        showNotification('Correo inválido. Usa un dominio válido.', 'error');
+        emailEl.focus();
+        return;
+    }
+    if (!nombreEl.value.trim() || !apellidoEl.value.trim() || !direccionEl.value.trim() || !ciudadEl.value.trim() || !departamentoEl.value.trim()) {
+        showNotification('Completa todos los campos obligatorios.', 'error');
+        return;
+    }
+
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
     
     const token = localStorage.getItem('token');
+    const baseUrl = API_URL.replace('localhost', '127.0.0.1');
     const url = currentEditId 
-        ? `${API_URL}/api/socios/${currentEditId}`
-        : `${API_URL}/api/socios`;
+        ? `${baseUrl}/api/socios/${currentEditId}`
+        : `${baseUrl}/api/socios`;
     const method = currentEditId ? 'PUT' : 'POST';
     
     try {
@@ -397,13 +488,113 @@ async function handleSubmit(e) {
             closeModal();
             loadSociosData();
         } else {
-            const error = await response.json();
-            showNotification(error.error || 'Error al guardar', 'error');
+            let errorText = 'Error al guardar';
+            let missing = [];
+            try {
+                const err = await response.json();
+                errorText = err.error || errorText;
+                if (Array.isArray(err.campos_faltantes)) missing = err.campos_faltantes;
+            } catch {}
+            console.error('Guardar socio - respuesta 400/500:', response.status, errorText, missing);
+            if (missing.length) {
+                // Resaltar y enfocar el primer campo faltante
+                const first = missing[0];
+                const el = document.getElementById(first);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.classList.add('input-error');
+                    setTimeout(() => el.classList.remove('input-error'), 1500);
+                    el.focus();
+                }
+                showNotification(`${errorText}. Falta(n): ${missing.join(', ')}`, 'error');
+            } else {
+                showNotification(errorText, 'error');
+            }
         }
     } catch (error) {
         console.error('Error:', error);
         showNotification('Error de conexión', 'error');
     }
+}
+
+// ===================================
+// Validaciones de entradas y máscaras
+// ===================================
+function setupInputValidations() {
+    const identidadEl = document.getElementById('identidad');
+    const telefonoEl = document.getElementById('telefono');
+    const celularEl = document.getElementById('celular');
+    const emailEl = document.getElementById('email');
+    const nombreEl = document.getElementById('nombre');
+    const apellidoEl = document.getElementById('apellido');
+
+    if (identidadEl) {
+        identidadEl.addEventListener('input', () => {
+            identidadEl.value = maskIdentidad(identidadEl.value);
+        });
+    }
+    if (telefonoEl) {
+        telefonoEl.addEventListener('input', () => {
+            telefonoEl.value = maskTelefono(telefonoEl.value);
+        });
+    }
+    if (celularEl) {
+        celularEl.addEventListener('input', () => {
+            celularEl.value = maskTelefono(celularEl.value);
+        });
+    }
+    if (emailEl) {
+        emailEl.addEventListener('blur', () => {
+            const email = emailEl.value.trim();
+            if (email && !isValidEmail(email)) {
+                showNotification('Correo inválido. Verifica el dominio.', 'error');
+                emailEl.focus();
+            }
+        });
+    }
+
+    // Solo texto para nombre y apellido (letras y espacios)
+    const onlyLetters = (value) => value.replace(/[^A-Za-zÁÉÍÓÚáéíóúñÑ\s]/g, '');
+    if (nombreEl) {
+        nombreEl.addEventListener('input', () => {
+            nombreEl.value = onlyLetters(nombreEl.value);
+        });
+    }
+    if (apellidoEl) {
+        apellidoEl.addEventListener('input', () => {
+            apellidoEl.value = onlyLetters(apellidoEl.value);
+        });
+    }
+}
+
+function maskIdentidad(value) {
+    const digits = value.replace(/\D/g, '').slice(0, 13);
+    const part1 = digits.slice(0, 4);
+    const part2 = digits.slice(4, 8);
+    const part3 = digits.slice(8, 13);
+    let masked = part1;
+    if (part2) masked += '-' + part2;
+    if (part3) masked += '-' + part3;
+    return masked;
+}
+
+function maskTelefono(value) {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    const part1 = digits.slice(0, 4);
+    const part2 = digits.slice(4, 8);
+    let masked = part1;
+    if (part2) masked += '-' + part2;
+    return masked;
+}
+
+function isValidEmail(email) {
+    // Validación de formato y dominio común
+    const basic = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+    if (!basic.test(email)) return false;
+    const domain = email.split('@')[1].toLowerCase();
+    const allowedTLDs = ['com','net','org','edu','gov','hn','es'];
+    const tld = domain.split('.').pop();
+    return allowedTLDs.includes(tld);
 }
 
 // ===================================

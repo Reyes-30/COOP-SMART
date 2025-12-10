@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico Completo API - COOP-SMART</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .test-group {
+            margin-bottom: 20px;
+        }
+        
+        .test-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #6c757d;
+        }
+        
+        .test-item.loading {
+            border-left-color: #ffc107;
+            background: #fff8e1;
+        }
+        
+        .test-item.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .test-item.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .test-item.warning {
+            border-left-color: #ff9800;
+            background: #fff3cd;
+        }
+        
+        .test-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .test-result {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .status-badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-badge.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-badge.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .json-viewer {
+            background: #2d3748;
+            color: #a0aec0;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-top: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .json-key {
+            color: #63b3ed;
+        }
+        
+        .json-string {
+            color: #9ae6b4;
+        }
+        
+        .json-number {
+            color: #fbd38d;
+        }
+        
+        .json-boolean {
+            color: #fc8181;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .summary-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .summary-item .number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .summary-item .label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnóstico Completo de API</h1>
+        
+        <div class="card">
+            <h2>Controles</h2>
+            <div class="button-group">
+                <button id="btnTestAll" onclick="ejecutarTodasLasPruebas()">🚀 Ejecutar Todas las Pruebas</button>
+                <button id="btnTestAuth" onclick="probarAutenticacion()">🔐 Probar Autenticación</button>
+                <button id="btnTestEndpoints" onclick="probarEndpoints()">📡 Probar Endpoints</button>
+                <button onclick="limpiarResultados()">🗑️ Limpiar</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Resumen</h2>
+            <div class="summary-grid" id="summaryGrid">
+                <div class="summary-item">
+                    <div class="number" id="summaryPrestamoCount">-</div>
+                    <div class="label">Préstamos</div>
+                </div>
+                <div class="summary-item">
+                    <div class="number" id="summarySocioCount">-</div>
+                    <div class="label">Socios</div>
+                </div>
+                <div class="summary-item">
+                    <div class="number" id="summaryPagoCount">-</div>
+                    <div class="label">Pagos</div>
+                </div>
+                <div class="summary-item">
+                    <div class="number" id="summaryTokenStatus">-</div>
+                    <div class="label">Token</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Resultados de Pruebas</h2>
+            <div id="results"></div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:3000';
+        
+        function agregarResultado(titulo, resultado, tipo = 'loading') {
+            const resultsDiv = document.getElementById('results');
+            const testItem = document.createElement('div');
+            testItem.className = `test-item ${tipo}`;
+            testItem.id = 'test-' + Date.now();
+            
+            testItem.innerHTML = `
+                <div class="test-title">${titulo}</div>
+                <div class="test-result">${resultado}</div>
+            `;
+            
+            resultsDiv.appendChild(testItem);
+            return testItem;
+        }
+        
+        function actualizarResultado(element, resultado, tipo) {
+            element.className = `test-item ${tipo}`;
+            element.querySelector('.test-result').innerHTML = resultado;
+        }
+        
+        function formatearJSON(obj) {
+            return JSON.stringify(obj, null, 2)
+                .replace(/"([^"]+)":/g, '<span class="json-key">"$1":</span>')
+                .replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>')
+                .replace(/: (\d+)/g, ': <span class="json-number">$1</span>')
+                .replace(/: (true|false)/g, ': <span class="json-boolean">$1</span>');
+        }
+        
+        function limpiarResultados() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('summaryPrestamoCount').textContent = '-';
+            document.getElementById('summarySocioCount').textContent = '-';
+            document.getElementById('summaryPagoCount').textContent = '-';
+            document.getElementById('summaryTokenStatus').textContent = '-';
+        }
+        
+        async function probarAutenticacion() {
+            const testEl = agregarResultado('🔐 Verificando Autenticación', 'Comprobando token...', 'loading');
+            
+            try {
+                const token = localStorage.getItem('token');
+                const userStr = localStorage.getItem('user');
+                
+                if (!token) {
+                    actualizarResultado(testEl, 
+                        '❌ No hay token en localStorage\n\n' +
+                        'Debes iniciar sesión primero.', 
+                        'error'
+                    );
+                    document.getElementById('summaryTokenStatus').innerHTML = '<span style="color: #dc3545;">❌</span>';
+                    return false;
+                }
+                
+                const user = userStr ? JSON.parse(userStr) : null;
+                
+                let resultado = '✅ Token encontrado\n\n';
+                resultado += `Token: ${token.substring(0, 30)}...\n\n`;
+                
+                if (user) {
+                    resultado += 'Usuario:\n';
+                    resultado += `- ID: ${user.id}\n`;
+                    resultado += `- Nombre: ${user.nombre_completo || user.nombre_usuario}\n`;
+                    resultado += `- Rol: ${user.rol}\n`;
+                    resultado += `- Email: ${user.email || 'N/A'}\n\n`;
+                }
+                
+                // Probar el token con la API
+                resultado += 'Probando token con la API...\n';
+                
+                const response = await fetch(`${API_URL}/api/socios`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    resultado += '✅ Token válido - API responde correctamente';
+                    actualizarResultado(testEl, resultado, 'success');
+                    document.getElementById('summaryTokenStatus').innerHTML = '<span style="color: #28a745;">✅</span>';
+                    return true;
+                } else if (response.status === 401) {
+                    resultado += '❌ Token expirado o inválido\n';
+                    resultado += `Status: ${response.status}\n`;
+                    const error = await response.json();
+                    resultado += `Error: ${error.error || error.message || 'Token expirado'}`;
+                    actualizarResultado(testEl, resultado, 'error');
+                    document.getElementById('summaryTokenStatus').innerHTML = '<span style="color: #dc3545;">❌</span>';
+                    return false;
+                } else {
+                    resultado += `⚠️ Error inesperado: ${response.status}`;
+                    actualizarResultado(testEl, resultado, 'warning');
+                    document.getElementById('summaryTokenStatus').innerHTML = '<span style="color: #ff9800;">⚠️</span>';
+                    return false;
+                }
+                
+            } catch (error) {
+                actualizarResultado(testEl, 
+                    `❌ Error: ${error.message}\n\n` +
+                    'No se pudo conectar con el servidor. Verifica que el backend esté corriendo.', 
+                    'error'
+                );
+                document.getElementById('summaryTokenStatus').innerHTML = '<span style="color: #dc3545;">❌</span>';
+                return false;
+            }
+        }
+        
+        async function probarEndpoints() {
+            const endpoints = [
+                { nombre: 'Préstamos', url: '/api/prestamos', summaryId: 'summaryPrestamoCount' },
+                { nombre: 'Socios', url: '/api/socios', summaryId: 'summarySocioCount' },
+                { nombre: 'Pagos', url: '/api/pagos', summaryId: 'summaryPagoCount' }
+            ];
+            
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                agregarResultado('❌ No hay token', 'Debes iniciar sesión primero.', 'error');
+                return;
+            }
+            
+            for (const endpoint of endpoints) {
+                const testEl = agregarResultado(
+                    `📡 Probando ${endpoint.nombre}`, 
+                    `GET ${endpoint.url}\nCargando...`, 
+                    'loading'
+                );
+                
+                try {
+                    const response = await fetch(`${API_URL}${endpoint.url}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    let resultado = `GET ${endpoint.url}\n`;
+                    resultado += `Status: ${response.status} ${response.statusText}\n\n`;
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const count = Array.isArray(data) ? data.length : 0;
+                        
+                        resultado += `✅ Respuesta exitosa\n`;
+                        resultado += `Total de registros: ${count}\n\n`;
+                        
+                        if (count > 0) {
+                            resultado += `Primer registro:\n`;
+                            resultado += `<div class="json-viewer">${formatearJSON(data[0])}</div>`;
+                        } else {
+                            resultado += '⚠️ No hay registros en la base de datos\n';
+                            resultado += `Estructura devuelta: ${JSON.stringify(data)}`;
+                        }
+                        
+                        actualizarResultado(testEl, resultado, count > 0 ? 'success' : 'warning');
+                        document.getElementById(endpoint.summaryId).textContent = count;
+                    } else {
+                        const error = await response.json();
+                        resultado += `❌ Error en la petición\n`;
+                        resultado += `<div class="json-viewer">${formatearJSON(error)}</div>`;
+                        actualizarResultado(testEl, resultado, 'error');
+                        document.getElementById(endpoint.summaryId).textContent = '❌';
+                    }
+                    
+                } catch (error) {
+                    actualizarResultado(testEl, 
+                        `❌ Error de conexión: ${error.message}\n\n` +
+                        `No se pudo conectar con ${endpoint.url}`, 
+                        'error'
+                    );
+                    document.getElementById(endpoint.summaryId).textContent = '❌';
+                }
+            }
+        }
+        
+        async function ejecutarTodasLasPruebas() {
+            limpiarResultados();
+            
+            const btnTestAll = document.getElementById('btnTestAll');
+            btnTestAll.disabled = true;
+            btnTestAll.textContent = '⏳ Ejecutando pruebas...';
+            
+            try {
+                const authOk = await probarAutenticacion();
+                
+                if (authOk) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await probarEndpoints();
+                } else {
+                    agregarResultado(
+                        '⚠️ Pruebas de Endpoints Omitidas', 
+                        'No se pueden probar los endpoints sin un token válido.\n\n' +
+                        'Por favor, cierra sesión y vuelve a iniciar sesión para obtener un token nuevo.', 
+                        'warning'
+                    );
+                }
+                
+            } finally {
+                btnTestAll.disabled = false;
+                btnTestAll.textContent = '🚀 Ejecutar Todas las Pruebas';
+            }
+        }
+        
+        // Ejecutar automáticamente al cargar
+        window.addEventListener('load', () => {
+            setTimeout(ejecutarTodasLasPruebas, 500);
+        });
+    </script>
+</body>
+</html>

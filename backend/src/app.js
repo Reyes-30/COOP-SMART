@@ -46,6 +46,7 @@ const clientesRoutes = require('./routes/clientes.routes');
 const cuentasRoutes = require('./routes/cuentas.routes');
 const prestamosRoutes = require('./routes/prestamos.routes');
 const pagosRoutes = require('./routes/pagos.routes');
+const transaccionesRoutes = require('./routes/transacciones.routes');
 const reportesRoutes = require('./routes/reportes.routes');
 const logsRoutes = require('./routes/logs.routes');
 
@@ -56,6 +57,7 @@ app.use('/api/clientes', clientesRoutes);
 app.use('/api/cuentas', cuentasRoutes);
 app.use('/api/prestamos', prestamosRoutes);
 app.use('/api/pagos', pagosRoutes);
+app.use('/api/transacciones', transaccionesRoutes);
 app.use('/api/reportes', reportesRoutes);
 app.use('/api/logs', logsRoutes);
 
@@ -79,7 +81,10 @@ app.use((err, req, res, next) => {
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+// Importar sincronización de base de datos
+const { syncDatabase } = require('./models');
+
+app.listen(PORT, async () => {
   console.log(`
   ╔════════════════════════════════════════╗
   ║     🏦 COOP-SMART API Server          ║
@@ -89,6 +94,9 @@ app.listen(PORT, () => {
   ║  URL: http://localhost:${PORT}            ║
   ╚════════════════════════════════════════╝
   `);
+  
+  // Sincronizar base de datos
+  await syncDatabase();
 });
 
 module.exports = app;

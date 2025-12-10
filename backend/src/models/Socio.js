@@ -36,11 +36,11 @@ const Socio = sequelize.define('Socio', {
   },
   telefono: {
     type: DataTypes.STRING(20),
-    allowNull: false
+    allowNull: true
   },
   celular: {
     type: DataTypes.STRING(20),
-    allowNull: true
+    allowNull: false
   },
   email: {
     type: DataTypes.STRING(100),
@@ -96,6 +96,13 @@ const Socio = sequelize.define('Socio', {
   notas: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  // Campo virtual para nombre completo
+  nombre_completo: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      return `${this.nombre} ${this.apellido}`;
+    }
   }
 }, {
   tableName: 'socios',

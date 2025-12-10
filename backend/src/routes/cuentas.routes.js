@@ -34,4 +34,10 @@ router.post('/:id/retirar',
   cuentasController.retirar
 );
 
+// Actualizar cuenta (estado/tasa/tipo) (solo admin y cajero)
+router.put('/:id',
+  verificarRol('administrador', 'cajero'),
+  cuentasController.actualizarCuenta
+);
+
 module.exports = router;

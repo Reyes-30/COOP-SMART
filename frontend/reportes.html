@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes - COOP-SMART</title>
+    <link rel="stylesheet" href="css/pagos.css">
+    <link rel="stylesheet" href="css/reportes.css">
+    <!-- Chart.js para gráficas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- jsPDF para exportar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <!-- SheetJS para exportar Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- html2canvas para capturar gráficas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-icon">💰</div>
+                <div>
+                    <h1 class="logo-text">COOP-SMART</h1>
+                    <p class="logo-subtitle">Sistema de Gestión Cooperativa</p>
+                </div>
+            </div>
+            
+            <div class="header-search">
+                <input type="text" id="globalSearch" placeholder="Buscar reportes..." class="search-input">
+                <span class="search-icon">🔍</span>
+            </div>
+            
+            <div class="user-menu">
+                <div class="user-info">
+                    <span class="user-name" id="userName">Admin</span>
+                    <span class="user-role" id="userRole">Administrador</span>
+                </div>
+                <button class="logout-btn" id="logoutBtn">
+                    <span>🚪</span> Salir
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav-menu">
+        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+        <a href="socios.html" class="nav-link">👥 Socios</a>
+        <a href="cuentas.html" class="nav-link">💳 Cuentas</a>
+        <a href="prestamos.html" class="nav-link">💵 Préstamos</a>
+        <a href="transacciones.html" class="nav-link">📝 Transacciones</a>
+        <a href="pagos.html" class="nav-link">💸 Pagos</a>
+        <a href="reportes.html" class="nav-link active">📈 Reportes</a>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h2 class="page-title">📈 Reportes y Estadísticas</h2>
+                <p class="page-subtitle">Análisis completo y exportación de datos del sistema</p>
+            </div>
+        </div>
+
+        <!-- Filtros de Reportes -->
+        <div class="card">
+            <div class="card-header">
+                <h3>🔍 Filtros de Reportes</h3>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 2fr 3fr; gap: 1rem; align-items: end;">
+                    <div class="form-group">
+                        <label>📅 Fecha Inicio</label>
+                        <input type="date" id="filtro-fecha-inicio" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>📅 Fecha Fin</label>
+                        <input type="date" id="filtro-fecha-fin" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>📊 Tipo de Reporte</label>
+                        <select id="tipo-reporte" class="form-control">
+                            <option value="resumen">📊 Resumen Financiero</option>
+                            <option value="socios">👥 Análisis de Socios</option>
+                            <option value="cuentas">💳 Cuentas por Tipo</option>
+                            <option value="prestamos">💵 Préstamos Detallado</option>
+                            <option value="mora">📉 Préstamos en Mora</option>
+                            <option value="pagos">💸 Pagos por Período</option>
+                            <option value="transacciones">📝 Transacciones</option>
+                            <option value="evolucion">📈 Evolución de Saldos</option>
+                            <option value="top-socios">🏆 Top Socios</option>
+                            <option value="crecimiento">📈 Crecimiento</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="display: flex; gap: 0.5rem;">
+                        <button class="btn-primary" id="btn-generar-reporte" style="flex: 2;">
+                            🔄 Generar Reporte
+                        </button>
+                        <button class="btn-success" id="btn-exportar-pdf" style="flex: 1;">
+                            📄 PDF
+                        </button>
+                        <button class="btn-success" id="btn-exportar-excel" style="flex: 1;">
+                            📊 Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+            <!-- Área de Reportes -->
+            <section class="reportes-container">
+                <!-- Resumen Financiero -->
+                <div id="reporte-resumen" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>📊 Resumen Financiero General</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-resumen"></span>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card stat-blue">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-info">
+                                <h3 id="total-socios-activos">0</h3>
+                                <p>Socios Activos</p>
+                                <small id="total-socios-general">de 0 totales</small>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-green">
+                            <div class="stat-icon">💳</div>
+                            <div class="stat-info">
+                                <h3 id="total-cuentas-activas">0</h3>
+                                <p>Cuentas Activas</p>
+                                <small id="saldo-total-cuentas">L. 0.00</small>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-orange">
+                            <div class="stat-icon">💵</div>
+                            <div class="stat-info">
+                                <h3 id="prestamos-activos">0</h3>
+                                <p>Préstamos Activos</p>
+                                <small id="monto-prestamos">L. 0.00</small>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-red">
+                            <div class="stat-icon">⚠️</div>
+                            <div class="stat-info">
+                                <h3 id="prestamos-pendientes">0</h3>
+                                <p>Préstamos Pendientes</p>
+                                <small id="saldo-pendiente">L. 0.00</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3>💸 Pagos del Período</h3>
+                            <canvas id="chart-pagos-periodo"></canvas>
+                            <div class="chart-stats">
+                                <p>Total Pagado: <strong id="total-pagos-periodo">L. 0.00</strong></p>
+                                <p>Cantidad de Pagos: <strong id="cantidad-pagos">0</strong></p>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>📝 Transacciones del Período</h3>
+                            <canvas id="chart-transacciones-periodo"></canvas>
+                            <div class="chart-stats">
+                                <p>Depósitos: <strong id="total-depositos">L. 0.00</strong></p>
+                                <p>Retiros: <strong id="total-retiros">L. 0.00</strong></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Análisis de Socios -->
+                <div id="reporte-socios" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>👥 Análisis de Socios</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-socios"></span>
+                    </div>
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3>Estado de Socios</h3>
+                            <canvas id="chart-socios-estado"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Crecimiento de Socios (Últimos 12 Meses)</h3>
+                            <canvas id="chart-crecimiento"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cuentas por Tipo -->
+                <div id="reporte-cuentas" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>💳 Análisis de Cuentas por Tipo</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-cuentas"></span>
+                    </div>
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3>Distribución por Tipo</h3>
+                            <canvas id="chart-cuentas-tipo"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Saldos por Tipo de Cuenta</h3>
+                            <canvas id="chart-cuentas-saldos"></canvas>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="tabla-cuentas-tipo">
+                            <thead>
+                                <tr>
+                                    <th>Tipo de Cuenta</th>
+                                    <th>Cantidad</th>
+                                    <th>Saldo Total</th>
+                                    <th>Saldo Promedio</th>
+                                    <th>Saldo Máximo</th>
+                                    <th>Saldo Mínimo</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Préstamos Detallado -->
+                <div id="reporte-prestamos" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>💵 Reporte Detallado de Préstamos</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-prestamos"></span>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="tabla-prestamos">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha</th>
+                                    <th>Socio</th>
+                                    <th>Identificación</th>
+                                    <th>Monto</th>
+                                    <th>Tasa %</th>
+                                    <th>Plazo</th>
+                                    <th>Cuota</th>
+                                    <th>Saldo Pendiente</th>
+                                    <th>Pagos</th>
+                                    <th>Total Pagado</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Préstamos en Mora -->
+                <div id="reporte-mora" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>📉 Préstamos en Mora</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-mora"></span>
+                    </div>
+                    <div class="alert alert-danger">
+                        <strong>⚠️ Atención:</strong> Los siguientes préstamos tienen cuotas vencidas
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="tabla-mora">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Socio</th>
+                                    <th>Identificación</th>
+                                    <th>Teléfono</th>
+                                    <th>Monto Original</th>
+                                    <th>Saldo Pendiente</th>
+                                    <th>Cuota Mensual</th>
+                                    <th>Pagos Realizados</th>
+                                    <th>Cuotas Pendientes</th>
+                                    <th>Días en Mora</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pagos por Período -->
+                <div id="reporte-pagos" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>💸 Pagos por Período</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-pagos"></span>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Evolución de Pagos Mensuales</h3>
+                        <canvas id="chart-pagos-evolucion"></canvas>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="tabla-pagos-periodo">
+                            <thead>
+                                <tr>
+                                    <th>Mes</th>
+                                    <th>Cantidad de Pagos</th>
+                                    <th>Total Pagado</th>
+                                    <th>Promedio por Pago</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Transacciones por Tipo -->
+                <div id="reporte-transacciones" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>📝 Transacciones por Tipo</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-transacciones"></span>
+                    </div>
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3>Distribución por Tipo</h3>
+                            <canvas id="chart-transacciones-tipo"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Montos por Tipo</h3>
+                            <canvas id="chart-transacciones-montos"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Evolución de Saldos -->
+                <div id="reporte-evolucion" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>📈 Evolución de Saldos Mensuales</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-evolucion"></span>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Depósitos vs Retiros Mensuales</h3>
+                        <canvas id="chart-evolucion-saldos"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Socios -->
+                <div id="reporte-top-socios" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>🏆 Top 10 Socios por Saldo Total</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-top"></span>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="tabla-top-socios">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nombre</th>
+                                    <th>Identificación</th>
+                                    <th>Fecha Ingreso</th>
+                                    <th>Total Cuentas</th>
+                                    <th>Saldo Total</th>
+                                    <th>Total Préstamos</th>
+                                    <th>Deuda Total</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Top Socios -->
+                <div id="reporte-top-socios" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>🏆 Top 10 Socios por Saldo Total</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-top"></span>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="tabla-top-socios">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nombre</th>
+                                    <th>Identificación</th>
+                                    <th>Fecha Ingreso</th>
+                                    <th>Total Cuentas</th>
+                                    <th>Saldo Total</th>
+                                    <th>Total Préstamos</th>
+                                    <th>Deuda Total</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Resumen Ejecutivo -->
+                <div id="reporte-resumen-ejecutivo" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>🏦 Resumen Ejecutivo Completo</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-ejecutivo"></span>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card stat-blue">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-info">
+                                <h3 id="ejec-socios-activos">0</h3>
+                                <p>Socios Activos</p>
+                                <small id="ejec-nuevos-mes">+0 este mes</small>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-green">
+                            <div class="stat-icon">💰</div>
+                            <div class="stat-info">
+                                <h3 id="ejec-saldo-total">L. 0</h3>
+                                <p>Saldo Total Sistema</p>
+                                <small id="ejec-cuentas-activas">0 cuentas activas</small>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-orange">
+                            <div class="stat-icon">💵</div>
+                            <div class="stat-info">
+                                <h3 id="ejec-cartera-vigente">L. 0</h3>
+                                <p>Cartera Vigente</p>
+                                <small id="ejec-prestamos-activos">0 préstamos activos</small>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-red">
+                            <div class="stat-icon">⚠️</div>
+                            <div class="stat-info">
+                                <h3 id="ejec-prestamos-mora">0</h3>
+                                <p>Préstamos en Mora</p>
+                                <small id="ejec-prestamos-pendientes">0 pendientes aprobación</small>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-purple">
+                            <div class="stat-icon">💸</div>
+                            <div class="stat-info">
+                                <h3 id="ejec-pagos-mes">L. 0</h3>
+                                <p>Pagos del Mes</p>
+                                <small id="ejec-cantidad-pagos">0 pagos recibidos</small>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-blue">
+                            <div class="stat-icon">📝</div>
+                            <div class="stat-info">
+                                <h3 id="ejec-transacciones-mes">0</h3>
+                                <p>Transacciones del Mes</p>
+                                <small id="ejec-depositos-retiros">L. 0 neto</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Análisis de Rentabilidad -->
+                <div id="reporte-rentabilidad" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>💰 Análisis de Rentabilidad</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-rentabilidad"></span>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card stat-green">
+                            <div class="stat-icon">💵</div>
+                            <div class="stat-info">
+                                <h3 id="rent-ingresos-intereses">L. 0</h3>
+                                <p>Ingresos por Intereses</p>
+                                <small>Proyectados del período</small>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-blue">
+                            <div class="stat-icon">💸</div>
+                            <div class="stat-info">
+                                <h3 id="rent-pagos-recibidos">L. 0</h3>
+                                <p>Pagos Recibidos</p>
+                                <small>Total del período</small>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-orange">
+                            <div class="stat-icon">📤</div>
+                            <div class="stat-info">
+                                <h3 id="rent-desembolsado">L. 0</h3>
+                                <p>Total Desembolsado</p>
+                                <small id="rent-prestamos-aprobados">0 préstamos</small>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-purple">
+                            <div class="stat-icon">💰</div>
+                            <div class="stat-info">
+                                <h3 id="rent-saldo-sistema">L. 0</h3>
+                                <p>Saldo Total en Sistema</p>
+                                <small>Todas las cuentas activas</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <h3>📊 Distribución Financiera</h3>
+                        <canvas id="chart-rentabilidad"></canvas>
+                    </div>
+                </div>
+
+                <!-- Préstamos por Rango -->
+                <div id="reporte-prestamos-rango" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>📊 Distribución de Préstamos por Rango de Monto</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-rango"></span>
+                    </div>
+                    
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3>Cantidad de Préstamos por Rango</h3>
+                            <canvas id="chart-rango-cantidad"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Monto Total por Rango</h3>
+                            <canvas id="chart-rango-monto"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="data-table" id="tabla-rangos">
+                            <thead>
+                                <tr>
+                                    <th>Rango de Monto</th>
+                                    <th>Cantidad</th>
+                                    <th>Total Monto</th>
+                                    <th>Tasa Promedio</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Estado de Cuenta de Socio -->
+                <div id="reporte-estado-socio" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>👤 Estado de Cuenta Individual</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-estado-socio"></span>
+                    </div>
+
+                    <div class="alert alert-info" id="info-socio">
+                        <strong>Socio:</strong> <span id="socio-nombre-completo">N/A</span><br>
+                        <strong>Identificación:</strong> <span id="socio-identificacion">N/A</span><br>
+                        <strong>Fecha de Ingreso:</strong> <span id="socio-fecha-ingreso">N/A</span>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card stat-green">
+                            <div class="stat-icon">💳</div>
+                            <div class="stat-info">
+                                <h3 id="socio-total-cuentas">0</h3>
+                                <p>Cuentas Activas</p>
+                                <small id="socio-saldo-total">L. 0</small>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-orange">
+                            <div class="stat-icon">💵</div>
+                            <div class="stat-info">
+                                <h3 id="socio-prestamos-activos">0</h3>
+                                <p>Préstamos Activos</p>
+                                <small id="socio-monto-prestamos">L. 0</small>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-red">
+                            <div class="stat-icon">⚠️</div>
+                            <div class="stat-info">
+                                <h3 id="socio-deuda-total">L. 0</h3>
+                                <p>Deuda Pendiente</p>
+                            </div>
+                        </div>
+                        <div class="stat-card stat-blue">
+                            <div class="stat-icon">💸</div>
+                            <div class="stat-info">
+                                <h3 id="socio-total-pagado">L. 0</h3>
+                                <p>Total Pagado</p>
+                                <small id="socio-total-pagos">0 pagos</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3>Cuentas del Socio</h3>
+                            <div class="table-container">
+                                <table class="data-table" id="tabla-cuentas-socio">
+                                    <thead>
+                                        <tr>
+                                            <th>Número</th>
+                                            <th>Tipo</th>
+                                            <th>Saldo</th>
+                                            <th>Fecha Apertura</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Préstamos del Socio</h3>
+                            <div class="table-container">
+                                <table class="data-table" id="tabla-prestamos-socio">
+                                    <thead>
+                                        <tr>
+                                            <th>Monto</th>
+                                            <th>Tasa</th>
+                                            <th>Plazo</th>
+                                            <th>Saldo</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Movimientos de Cuenta -->
+                <div id="reporte-movimientos" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>💰 Movimientos de Cuenta</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-movimientos"></span>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="data-table" id="tabla-movimientos">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Descripción</th>
+                                    <th>Monto</th>
+                                    <th>Cuenta</th>
+                                    <th>Socio</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Proyección de Pagos -->
+                <div id="reporte-proyeccion-pagos" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>📅 Proyección de Pagos Próximos</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-proyeccion"></span>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>ℹ️ Información:</strong> Muestra los préstamos que tienen pagos próximos en los siguientes <span id="dias-proyeccion">30</span> días.
+                    </div>
+
+                    <div class="table-container">
+                        <table class="data-table" id="tabla-proyeccion">
+                            <thead>
+                                <tr>
+                                    <th>Socio</th>
+                                    <th>Identificación</th>
+                                    <th>Teléfono</th>
+                                    <th>Cuota Mensual</th>
+                                    <th>Cuotas Pendientes</th>
+                                    <th>Fecha Próximo Pago</th>
+                                    <th>Días Hasta Pago</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Comparativa Mensual -->
+                <div id="reporte-comparativa" class="reporte-section" style="display: none;">
+                    <div class="reporte-header">
+                        <h2>📊 Comparativa Mensual: Año Actual vs Año Anterior</h2>
+                        <span class="fecha-generacion" id="fecha-reporte-comparativa"></span>
+                    </div>
+
+                    <div class="chart-card">
+                        <h3>Pagos Recibidos: Comparativa Anual</h3>
+                        <canvas id="chart-comparativa"></canvas>
+                    </div>
+                </div>
+
+                <!-- Mensaje de bienvenida -->
+                <div id="mensaje-inicial" class="mensaje-inicial">
+                    <div class="mensaje-card">
+                        <h2>📊 Bienvenido al Módulo de Reportes</h2>
+                        <p>Selecciona un tipo de reporte y haz clic en "Generar Reporte" para visualizar los datos.</p>
+                        <ul>
+                            <li>📈 <strong>Resumen Financiero:</strong> Vista general del estado de la cooperativa</li>
+                            <li>👥 <strong>Análisis de Socios:</strong> Distribución y crecimiento de socios</li>
+                            <li>💳 <strong>Cuentas:</strong> Análisis por tipo de cuenta</li>
+                            <li>💵 <strong>Préstamos:</strong> Detalles y estado de préstamos</li>
+                            <li>📉 <strong>Mora:</strong> Préstamos con pagos vencidos</li>
+                            <li>💸 <strong>Pagos:</strong> Evolución de pagos en el tiempo</li>
+                            <li>📝 <strong>Transacciones:</strong> Análisis de depósitos y retiros</li>
+                            <li>🏆 <strong>Top Socios:</strong> Mejores socios por saldo</li>
+                        </ul>
+                        <div class="quick-actions">
+                            <button class="btn btn-primary" onclick="document.getElementById('tipo-reporte').value='resumen'; document.getElementById('btn-generar-reporte').click();">
+                                Ver Resumen Financiero
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/reportes.js"></script>
+</body>
+</html>
