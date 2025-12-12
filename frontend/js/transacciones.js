@@ -23,7 +23,8 @@ let filtros = {
 
 // Paginación
 let paginaActual = 1;
-const itemsPorPagina = 50;
+const itemsPorPagina = 15;
+let totalPaginasTrans = 1;
 
 // ============================================
 // INICIALIZACIÓN
@@ -327,7 +328,7 @@ function aplicarFechasPersonalizadas() {
     aplicarFiltros();
 }
 
-function aplicarFiltros() {
+function aplicarFiltros(keepPage = false) {
     // Obtener valores de filtros adicionales
     filtros.cuenta = document.getElementById('filtroCuenta').value;
     filtros.montoMin = parseFloat(document.getElementById('montoMin').value) || null;
@@ -378,8 +379,10 @@ function aplicarFiltros() {
             `${transaccionesFiltradas.length} transacciones encontradas`;
     }
     
-    // Resetear paginación
-    paginaActual = 1;
+    // Resetear paginación salvo que se indique conservar
+    if (!keepPage) {
+        paginaActual = 1;
+    }
     
     // Renderizar
     renderizarTransacciones(transaccionesFiltradas);
@@ -434,8 +437,10 @@ function handleGlobalSearch(e) {
                id.includes(busqueda);
     });
     
-    document.getElementById('resultsCount').textContent = 
-        `${transaccionesFiltradas.length} transacciones encontradas`;
+    const rc = document.getElementById('resultsCount');
+    if (rc) {
+        rc.textContent = `${transaccionesFiltradas.length} transacciones encontradas`;
+    }
     
     paginaActual = 1;
     renderizarTransacciones(transaccionesFiltradas);
@@ -504,30 +509,24 @@ function renderizarTransacciones(transaccionesFiltradas) {
 }
 
 function actualizarPaginacion(totalItems) {
-    const totalPaginas = Math.ceil(totalItems / itemsPorPagina);
-    
-    document.getElementById('currentPage').textContent = totalPaginas > 0 ? paginaActual : 0;
-    document.getElementById('totalPages').textContent = totalPaginas;
-    
+    totalPaginasTrans = Math.ceil(totalItems / itemsPorPagina) || 1;
+    document.getElementById('currentPage').textContent = totalPaginasTrans > 0 ? paginaActual : 0;
+    document.getElementById('totalPages').textContent = totalPaginasTrans;
     document.getElementById('btnPrevPage').disabled = paginaActual <= 1;
-    document.getElementById('btnNextPage').disabled = paginaActual >= totalPaginas;
+    document.getElementById('btnNextPage').disabled = paginaActual >= totalPaginasTrans;
 }
 
 function paginaAnterior() {
     if (paginaActual > 1) {
         paginaActual--;
-        aplicarFiltros();
+        aplicarFiltros(true);
     }
 }
 
 function paginaSiguiente() {
-    const totalPaginas = Math.ceil(
-        parseInt(document.getElementById('resultsCount').textContent) / itemsPorPagina
-    );
-    
-    if (paginaActual < totalPaginas) {
+    if (paginaActual < totalPaginasTrans) {
         paginaActual++;
-        aplicarFiltros();
+        aplicarFiltros(true);
     }
 }
 

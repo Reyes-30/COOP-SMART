@@ -11,24 +11,18 @@ const nombresHombres = ['José', 'Carlos', 'Luis', 'Miguel', 'Juan', 'Pedro', 'M
 const nombresMujeres = ['María', 'Ana', 'Rosa', 'Carmen', 'Teresa', 'Marta', 'Laura', 'Patricia', 'Claudia', 'Sandra', 'Gabriela', 'Diana', 'Silvia', 'Andrea', 'Mónica'];
 const apellidos = ['García', 'Rodríguez', 'López', 'Martínez', 'González', 'Hernández', 'Pérez', 'Sánchez', 'Ramírez', 'Torres', 'Flores', 'Rivera', 'Gómez', 'Díaz', 'Cruz', 'Morales', 'Reyes', 'Jiménez', 'Álvarez', 'Romero', 'Vargas', 'Castro', 'Ortiz', 'Ruiz', 'Mendoza'];
 
-// Generar DNI aleatorio (Honduras: 13 dígitos)
+// Generar identidad HN con formato 0000-0000-00000
 function generarIdentidad() {
-  let identidad = '';
-  for (let i = 0; i < 13; i++) {
-    identidad += Math.floor(Math.random() * 10);
-  }
-  return identidad;
+  const bloque = (len) => Array.from({ length: len }, () => Math.floor(Math.random() * 10)).join('');
+  return `${bloque(4)}-${bloque(4)}-${bloque(5)}`;
 }
 
-// Generar número de teléfono (Honduras: 8 dígitos)
+// Generar celular/telefono HN con formato 0000-0000
 function generarTelefono() {
   const prefijos = ['9', '8', '3', '2'];
   const prefijo = prefijos[Math.floor(Math.random() * prefijos.length)];
-  let telefono = prefijo;
-  for (let i = 0; i < 7; i++) {
-    telefono += Math.floor(Math.random() * 10);
-  }
-  return telefono;
+  const resto = Array.from({ length: 7 }, () => Math.floor(Math.random() * 10)).join('');
+  return `${prefijo}${resto.slice(0,3)}-${resto.slice(3,7)}`;
 }
 
 // Generar email
@@ -38,15 +32,26 @@ function generarEmail(nombre, apellido) {
 
 // Generar dirección
 function generarDireccion() {
-  const ciudades = ['Tegucigalpa', 'San Pedro Sula', 'La Ceiba', 'Choluteca', 'Comayagua', 'Danlí', 'El Progreso', 'Juticalpa'];
+  const departamentos = ['Francisco Morazán', 'Cortés', 'Atlántida', 'Choluteca', 'Comayagua', 'El Paraíso', 'Yoro', 'Olancho'];
+  const ciudades = {
+    'Francisco Morazán': ['Tegucigalpa', 'Valle de Ángeles', 'Santa Lucía'],
+    'Cortés': ['San Pedro Sula', 'Puerto Cortés', 'Choloma'],
+    'Atlántida': ['La Ceiba', 'Tela', 'El Porvenir'],
+    'Choluteca': ['Choluteca', 'San Marcos de Colón'],
+    'Comayagua': ['Comayagua', 'Siguatepeque'],
+    'El Paraíso': ['Danlí', 'Yuscarán'],
+    'Yoro': ['El Progreso', 'Yoro'],
+    'Olancho': ['Juticalpa', 'Catacamas']
+  };
   const colonias = ['Col. Kennedy', 'Col. Las Hadas', 'Barrio La Granja', 'Col. Palmira', 'Barrio El Centro', 'Col. Torocagua', 'Barrio Morazán', 'Col. Tepeyac'];
-  
-  const ciudad = ciudades[Math.floor(Math.random() * ciudades.length)];
+
+  const depto = departamentos[Math.floor(Math.random() * departamentos.length)];
+  const ciudad = ciudades[depto][Math.floor(Math.random() * ciudades[depto].length)];
   const colonia = colonias[Math.floor(Math.random() * colonias.length)];
   const calle = Math.floor(Math.random() * 50) + 1;
   const casa = Math.floor(Math.random() * 100) + 1;
-  
-  return `${colonia}, Calle ${calle}, Casa ${casa}, ${ciudad}`;
+
+  return { departamento: depto, ciudad, direccion: `${colonia}, Calle ${calle}, Casa ${casa}` };
 }
 
 // Generar fecha aleatoria en un rango
@@ -104,54 +109,63 @@ async function seedDatabase() {
     console.log(`✅ ${usuariosCreados} usuarios nuevos creados\n`);
 
     // 3. Crear 25 Socios
-    console.log('👨‍👩‍👧‍👦 Creando 25 socios...');
+    console.log('👨‍👩‍👧‍👦 Creando 25 socios/clientes...');
     const sociosData = [];
     
     for (let i = 0; i < 25; i++) {
       const esHombre = Math.random() > 0.5;
-      const nombre = esHombre 
+      const nombre1 = esHombre 
         ? nombresHombres[Math.floor(Math.random() * nombresHombres.length)]
         : nombresMujeres[Math.floor(Math.random() * nombresMujeres.length)];
-      const apellido = apellidos[Math.floor(Math.random() * apellidos.length)];
-      const segundoApellido = apellidos[Math.floor(Math.random() * apellidos.length)];
-      
+      const nombre2 = esHombre 
+        ? nombresHombres[Math.floor(Math.random() * nombresHombres.length)]
+        : nombresMujeres[Math.floor(Math.random() * nombresMujeres.length)];
+      const apellido1 = apellidos[Math.floor(Math.random() * apellidos.length)];
+      const apellido2 = apellidos[Math.floor(Math.random() * apellidos.length)];
+
       const fechaNacimiento = new Date();
       fechaNacimiento.setFullYear(fechaNacimiento.getFullYear() - (Math.floor(Math.random() * 40) + 20));
-      
+
+      const dir = generarDireccion();
+      const celular = generarTelefono();
+      const telefono = Math.random() > 0.5 ? generarTelefono() : null;
+
       sociosData.push({
-        numero_socio: `SOC-${String(i + 1).padStart(5, '0')}`,
-        tipo: Math.random() > 0.7 ? 'juridico' : 'natural',
-        nombre: nombre,
-        apellido: `${apellido} ${segundoApellido}`,
-        nombre_completo: `${nombre} ${apellido} ${segundoApellido}`,
+        nombre: `${nombre1} ${nombre2}`,
+        apellido: `${apellido1} ${apellido2}`,
         identidad: generarIdentidad(),
         fecha_nacimiento: fechaNacimiento.toISOString().split('T')[0],
-        sexo: esHombre ? 'M' : 'F',
-        estado_civil: ['soltero', 'casado', 'union_libre', 'divorciado'][Math.floor(Math.random() * 4)],
-        telefono: generarTelefono(),
-        email: generarEmail(nombre, apellido),
-        direccion: generarDireccion(),
+        genero: esHombre ? 'M' : 'F',
+        telefono: telefono,
+        celular: celular,
+        email: generarEmail(nombre1, apellido1),
+        direccion: dir.direccion,
+        ciudad: dir.ciudad,
+        departamento: dir.departamento,
+        tipo: Math.random() > 0.5 ? 'socio' : 'cliente',
+        fecha_ingreso: generarFecha(730, 0),
+        estado: Math.random() > 0.85 ? 'inactivo' : 'activo',
         ocupacion: ['Empleado', 'Comerciante', 'Profesional', 'Agricultor', 'Empresario'][Math.floor(Math.random() * 5)],
+        lugar_trabajo: ['Empresa Privada', 'Institución Pública', 'Negocio Propio', 'Cooperativa', 'Independiente'][Math.floor(Math.random() * 5)],
         ingresos_mensuales: (Math.floor(Math.random() * 30) + 10) * 1000,
-        fecha_ingreso: generarFecha(730, 0), // Últimos 2 años
-        estado: Math.random() > 0.9 ? 'inactivo' : 'activo',
-        notas: i % 5 === 0 ? 'Socio fundador' : null
+        notas: i % 7 === 0 ? 'Cliente referenciado' : null
       });
     }
     
     const socios = await Socio.bulkCreate(sociosData);
     console.log(`✅ ${socios.length} socios creados\n`);
 
-    // 4. Crear Cuentas (35 cuentas - algunos socios tienen múltiples cuentas)
+    // 4. Crear Cuentas (al menos una por cada socio/cliente)
     console.log('🏦 Creando cuentas...');
     const cuentasData = [];
-    let numeroCuenta = 1000;
+    let secuencial = 10000;
+    const prefCuenta = { ahorro: 'AH', corriente: 'CO', plazo_fijo: 'PF' };
     
     socios.forEach((socio, index) => {
-      // Cuenta principal (Ahorro)
+      // Cuenta principal (Ahorro) con formato tipo cooperativa
       cuentasData.push({
         id_socio: socio.id,
-        numero_cuenta: `${numeroCuenta++}`,
+        numero_cuenta: `${prefCuenta.ahorro}-${String(secuencial++).padStart(6,'0')}`,
         tipo: 'ahorro',
         saldo: (Math.floor(Math.random() * 50) + 5) * 1000,
         tasa_interes: 2.5,
@@ -163,7 +177,7 @@ async function seedDatabase() {
       if (index % 3 === 0) {
         cuentasData.push({
           id_socio: socio.id,
-          numero_cuenta: `${numeroCuenta++}`,
+          numero_cuenta: `${prefCuenta.corriente}-${String(secuencial++).padStart(6,'0')}`,
           tipo: 'corriente',
           saldo: (Math.floor(Math.random() * 100) + 10) * 1000,
           tasa_interes: 0,
@@ -176,7 +190,7 @@ async function seedDatabase() {
       if (index % 5 === 0) {
         cuentasData.push({
           id_socio: socio.id,
-          numero_cuenta: `${numeroCuenta++}`,
+          numero_cuenta: `${prefCuenta.plazo_fijo}-${String(secuencial++).padStart(6,'0')}`,
           tipo: 'plazo_fijo',
           saldo: (Math.floor(Math.random() * 200) + 50) * 1000,
           tasa_interes: 6.5,
@@ -191,12 +205,12 @@ async function seedDatabase() {
     const cuentas = await Cuenta.bulkCreate(cuentasData);
     console.log(`✅ ${cuentas.length} cuentas creadas\n`);
 
-    // 5. Crear Préstamos (20 préstamos)
+    // 5. Crear Préstamos (20 préstamos, incluyen clientes y socios)
     console.log('💰 Creando préstamos...');
     const prestamosData = [];
     
     for (let i = 0; i < 20; i++) {
-      const socio = socios[Math.floor(Math.random() * socios.length)];
+      const socio = socios[Math.floor(Math.random() * socios.length)]; // puede ser socio o cliente
       const monto = (Math.floor(Math.random() * 100) + 20) * 1000; // 20k - 120k
       const tasaInteres = 12 + Math.random() * 6; // 12% - 18%
       const plazoMeses = [12, 18, 24, 36, 48][Math.floor(Math.random() * 5)];
@@ -276,11 +290,11 @@ async function seedDatabase() {
     const pagos = await Pago.bulkCreate(pagosData);
     console.log(`✅ ${pagos.length} pagos creados\n`);
 
-    // 7. Crear Transacciones (50 transacciones)
+    // 7. Crear Transacciones (más movimientos por cuenta)
     console.log('📝 Creando transacciones...');
     const transaccionesData = [];
     
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 150; i++) {
       const cuenta = cuentas[Math.floor(Math.random() * cuentas.length)];
       const tipo = ['deposito', 'retiro', 'transferencia'][Math.floor(Math.random() * 3)];
       const monto = (Math.floor(Math.random() * 20) + 1) * 500; // 500 - 10,000

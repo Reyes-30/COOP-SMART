@@ -23,7 +23,7 @@ let filtros = {
 // Paginación
 let paginaActualPrestamos = 1;
 let paginaActualPagos = 1;
-const itemsPorPagina = 20;
+const itemsPorPagina = 15;
 
 // ============================================
 // INICIALIZACIÓN

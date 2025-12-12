@@ -12,6 +12,10 @@ let cuentas = [];
 let socios = [];
 let filtroActual = 'todas';
 let estadoActual = 'todas';
+// Estado de paginación
+let currentPageCuentas = 1;
+const PAGE_SIZE_CUENTAS = 15;
+let totalPagesCuentas = 1;
 
 // ============================================
 // INICIALIZACIÓN
@@ -123,6 +127,22 @@ function initEventListeners() {
     if (btnCloseEditar) btnCloseEditar.addEventListener('click', cerrarModalEditarCuenta);
     if (btnCancelarEditar) btnCancelarEditar.addEventListener('click', cerrarModalEditarCuenta);
     if (formEditar) formEditar.addEventListener('submit', handleEditarCuenta);
+
+    // Paginación
+    const btnPrev = document.getElementById('btnPrevPageCuentas');
+    const btnNext = document.getElementById('btnNextPageCuentas');
+    if (btnPrev) btnPrev.addEventListener('click', () => {
+        if (currentPageCuentas > 1) {
+            currentPageCuentas--;
+            renderizarCuentas();
+        }
+    });
+    if (btnNext) btnNext.addEventListener('click', () => {
+        if (currentPageCuentas < totalPagesCuentas) {
+            currentPageCuentas++;
+            renderizarCuentas();
+        }
+    });
 }
 
 // ============================================
@@ -232,6 +252,10 @@ function renderizarCuentas() {
         return true;
     });
     
+    // Actualizar total de páginas según filtros
+    totalPagesCuentas = Math.max(1, Math.ceil(cuentasFiltradas.length / PAGE_SIZE_CUENTAS));
+    if (currentPageCuentas > totalPagesCuentas) currentPageCuentas = totalPagesCuentas;
+
     if (cuentasFiltradas.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -241,10 +265,16 @@ function renderizarCuentas() {
                 </td>
             </tr>
         `;
+        actualizarPaginacionCuentas();
         return;
     }
     
-    tbody.innerHTML = cuentasFiltradas.map(cuenta => `
+    // Aplicar paginación
+    const startIndex = (currentPageCuentas - 1) * PAGE_SIZE_CUENTAS;
+    const endIndex = startIndex + PAGE_SIZE_CUENTAS;
+    const cuentasPagina = cuentasFiltradas.slice(startIndex, endIndex);
+
+    tbody.innerHTML = cuentasPagina.map(cuenta => `
         <tr>
             <td><strong>${cuenta.numero_cuenta}</strong></td>
             <td>${obtenerNombreTitular(cuenta.id_socio)}</td>
@@ -274,6 +304,8 @@ function renderizarCuentas() {
             </td>
         </tr>
     `).join('');
+
+    actualizarPaginacionCuentas();
 }
 
 // ============================================
@@ -285,11 +317,13 @@ function handleFilterClick(btn) {
     btn.classList.add('active');
     
     filtroActual = btn.dataset.filter;
+    currentPageCuentas = 1;
     renderizarCuentas();
 }
 
 function handleEstadoFilter(e) {
     estadoActual = e.target.value;
+    currentPageCuentas = 1;
     renderizarCuentas();
 }
 
@@ -297,6 +331,7 @@ function handleGlobalSearch(e) {
     const busqueda = e.target.value.toLowerCase().trim();
     
     if (!busqueda) {
+        currentPageCuentas = 1;
         renderizarCuentas();
         return;
     }
@@ -318,10 +353,17 @@ function handleGlobalSearch(e) {
                 </td>
             </tr>
         `;
+        totalPagesCuentas = 1;
+        actualizarPaginacionCuentas();
         return;
     }
     
-    tbody.innerHTML = cuentasFiltradas.map(cuenta => `
+    // Reiniciar a primera página para resultados de búsqueda
+    currentPageCuentas = 1;
+    totalPagesCuentas = Math.max(1, Math.ceil(cuentasFiltradas.length / PAGE_SIZE_CUENTAS));
+    const cuentasPagina = cuentasFiltradas.slice(0, PAGE_SIZE_CUENTAS);
+
+    tbody.innerHTML = cuentasPagina.map(cuenta => `
         <tr>
             <td><strong>${cuenta.numero_cuenta}</strong></td>
             <td>${obtenerNombreTitular(cuenta.id_socio)}</td>
@@ -343,6 +385,28 @@ function handleGlobalSearch(e) {
             </td>
         </tr>
     `).join('');
+
+    actualizarPaginacionCuentas();
+}
+
+// ============================================
+// PAGINACIÓN - UI
+// ============================================
+
+function actualizarPaginacionCuentas() {
+    const pageInfo = document.getElementById('pageInfoCuentas');
+    const btnPrev = document.getElementById('btnPrevPageCuentas');
+    const btnNext = document.getElementById('btnNextPageCuentas');
+    const pagination = document.getElementById('cuentasPagination');
+
+    if (!pageInfo || !btnPrev || !btnNext || !pagination) return;
+
+    pageInfo.textContent = `Página ${currentPageCuentas} de ${totalPagesCuentas}`;
+    btnPrev.disabled = currentPageCuentas <= 1;
+    btnNext.disabled = currentPageCuentas >= totalPagesCuentas;
+
+    // Siempre mostrar la barra de paginación para consistencia visual
+    pagination.style.display = 'flex';
 }
 
 // ============================================

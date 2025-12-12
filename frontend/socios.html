@@ -19,10 +19,8 @@
                 </div>
             </div>
             
-            <div class="header-search">
-                <input type="text" id="globalSearch" placeholder="Buscar por préstamo, socio, referencia..." class="search-input">
-                <span class="search-icon">�</span>
-            </div>
+            <!-- Se movió la búsqueda al panel de filtros -->
+            <div class="header-search" style="display:none;"></div>
             
             <div class="user-menu">
                 <div class="user-info">
@@ -100,8 +98,17 @@
 
         <!-- Filters Section -->
         <div class="card" style="margin-bottom: 1.5rem;">
-            <div class="card-header">
-                <h3>🔍 Filtros de Búsqueda</h3>
+            <div class="card-header" style="display:flex; align-items:center; justify-content:space-between; gap:1rem;">
+                <h3 style="margin:0;">🔍 Filtros de Búsqueda</h3>
+                <!-- Barra de búsqueda principal dentro de la franja del encabezado -->
+                <div class="search-group" style="min-width: 420px; flex: 0 1 520px;">
+                    <span class="search-group-icon">🔎</span>
+                    <input type="text" id="busquedaInput" class="search-input" placeholder="Buscar por ID, identidad o nombre">
+                    <div class="search-group-actions">
+                        <button class="btn-secondary" id="btnBuscar">Buscar</button>
+                        <button class="btn-secondary" id="btnLimpiarBusqueda">Limpiar</button>
+                    </div>
+                </div>
             </div>
             <div class="card-body" style="padding: 1.5rem;">
                 <div style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: flex-end;">
@@ -129,6 +136,8 @@
                             <option value="suspendido">Suspendidos</option>
                         </select>
                     </div>
+
+                    
                 </div>
             </div>
         </div>
@@ -168,6 +177,11 @@
                         </tr>
                     </tbody>
                 </table>
+                <div class="pagination" id="sociosPagination" style="display:flex; justify-content:center; align-items:center; gap:1rem; padding:1rem 0;">
+                    <button class="btn-secondary" id="btnPrevPage">← Anterior</button>
+                    <span id="pageInfo">Página 1 de 1</span>
+                    <button class="btn-secondary" id="btnNextPage">Siguiente →</button>
+                </div>
             </div>
         </div>
     </main>
@@ -201,6 +215,16 @@
                                     <span class="radio-description">Usuario externo</span>
                                 </div>
                             </label>
+                        </div>
+                        <div class="form-grid" style="margin-top: 1rem;">
+                            <div class="form-group">
+                                <label for="estado">Estado *</label>
+                                <select id="estado" name="estado" required>
+                                    <option value="activo">Activo</option>
+                                    <option value="inactivo">Inactivo</option>
+                                    <option value="suspendido">Suspendido</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 

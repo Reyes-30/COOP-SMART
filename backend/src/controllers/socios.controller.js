@@ -24,11 +24,17 @@ const obtenerSocios = async (req, res) => {
     const where = {};
     
     if (busqueda) {
-      where[Op.or] = [
+      const isNumeric = /^\d+$/.test(busqueda);
+      const orConds = [
         { nombre: { [Op.like]: `%${busqueda}%` } },
         { apellido: { [Op.like]: `%${busqueda}%` } },
         { identidad: { [Op.like]: `%${busqueda}%` } }
       ];
+      if (isNumeric) {
+        // Permitir buscar por ID exacto cuando 'busqueda' es numérica
+        orConds.push({ id: Number(busqueda) });
+      }
+      where[Op.or] = orConds;
     }
 
     if (tipo) where.tipo = tipo;

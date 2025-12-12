@@ -13,6 +13,27 @@ let currentFilter = 'todos';
 let currentEstadoFilter = 'todos';
 let sociosData = [];
 let currentEditId = null;
+let currentPage = 1;
+let totalPages = 1;
+const PAGE_SIZE = 15;
+let currentSearch = '';
+
+// ===================================
+// Autenticación
+// ===================================
+function checkAuth() {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = 'login.html';
+            return false;
+        }
+        return true;
+    } catch (e) {
+        console.error('Error verificando autenticación:', e);
+        return false;
+    }
+}
 
 // ===================================
 // Inicialización
@@ -21,59 +42,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Verificar autenticación
     checkAuth();
     
-    // Cargar datos del usuario
-    loadUserData();
-    
-    // Cargar datos
-    loadSociosData();
-    
-    // Event listeners
-    setupEventListeners();
-});
-
-// ===================================
-// Autenticación
-// ===================================
-function checkAuth() {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        window.location.href = 'login.html';
-    }
-}
-
-function loadUserData() {
-    try {
-        const userStr = localStorage.getItem('user');
-        const user = userStr ? JSON.parse(userStr) : {};
-        document.querySelectorAll('#userName').forEach(el => {
-            el.textContent = user.nombre_completo || user.nombre_usuario || 'Usuario';
-        });
-        document.querySelectorAll('#userRole').forEach(el => {
-            el.textContent = translateRole(user.rol) || 'Usuario';
-        });
-    } catch (error) {
-        console.error('Error al cargar usuario:', error);
-    }
-}
-
-function translateRole(role) {
-    const roles = {
-        'administrador': 'Administrador',
-        'cajero': 'Cajero',
-        'socio': 'Socio'
-    };
-    return roles[role] || role;
-}
-
-// ===================================
-// Event Listeners
-// ===================================
-function setupEventListeners() {
-    // Logout
+    // Eventos de logout
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
     }
+    
     
     // Sidebar toggle
     const sidebarToggle = document.getElementById('sidebarToggle');
@@ -101,9 +75,11 @@ function setupEventListeners() {
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            currentFilter = e.target.dataset.filter;
-            filterTable();
+            const target = e.currentTarget; // asegurar el botón, no el span interno
+            target.classList.add('active');
+            currentFilter = target.dataset.filter;
+            currentPage = 1; // reiniciar a la primera página
+            loadSociosData(); // solicitar al backend con filtros
         });
     });
     
@@ -111,15 +87,33 @@ function setupEventListeners() {
     if (estadoFilter) {
         estadoFilter.addEventListener('change', (e) => {
             currentEstadoFilter = e.target.value;
-            filterTable();
+            currentPage = 1; // reiniciar a la primera página
+            loadSociosData(); // solicitar al backend con filtros
         });
     }
     
-    // Búsqueda global
-    const globalSearch = document.getElementById('globalSearch');
-    if (globalSearch) {
-        globalSearch.addEventListener('input', (e) => {
-            searchTable(e.target.value);
+    // Búsqueda en panel de filtros (server-side)
+    const busquedaInput = document.getElementById('busquedaInput');
+    const btnBuscar = document.getElementById('btnBuscar');
+    const btnLimpiarBusqueda = document.getElementById('btnLimpiarBusqueda');
+    if (busquedaInput && btnBuscar && btnLimpiarBusqueda) {
+        btnBuscar.addEventListener('click', () => {
+            currentSearch = busquedaInput.value.trim();
+            currentPage = 1;
+            loadSociosData();
+        });
+        busquedaInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                currentSearch = busquedaInput.value.trim();
+                currentPage = 1;
+                loadSociosData();
+            }
+        });
+        btnLimpiarBusqueda.addEventListener('click', () => {
+            busquedaInput.value = '';
+            currentSearch = '';
+            currentPage = 1;
+            loadSociosData();
         });
     }
     
@@ -152,6 +146,26 @@ function setupEventListeners() {
 
     // Validaciones y máscaras de entrada
     setupInputValidations();
+
+    // Paginación
+    const btnPrev = document.getElementById('btnPrevPage');
+    const btnNext = document.getElementById('btnNextPage');
+    if (btnPrev) {
+        btnPrev.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                loadSociosData();
+            }
+        });
+    }
+    if (btnNext) {
+        btnNext.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadSociosData();
+            }
+        });
+    }
     
     // Modal Detalles
     const btnCloseDetalles = document.getElementById('btnCloseDetalles');
@@ -174,7 +188,9 @@ function setupEventListeners() {
     
     // Fecha de ingreso por defecto
     document.getElementById('fecha_ingreso').valueAsDate = new Date();
-}
+    // Cargar listado inicial
+    loadSociosData();
+});
 
 function handleLogout() {
     if (confirm('¿Está seguro que desea cerrar sesión?')) {
@@ -191,7 +207,15 @@ async function loadSociosData() {
     const token = localStorage.getItem('token');
     
     try {
-        const response = await fetch(`${API_URL}/api/socios`, {
+        const baseUrl = API_URL.replace('localhost','127.0.0.1');
+        const params = new URLSearchParams({
+            pagina: String(currentPage),
+            limite: String(PAGE_SIZE),
+            tipo: currentFilter === 'todos' ? '' : currentFilter,
+            estado: currentEstadoFilter === 'todos' ? '' : currentEstadoFilter,
+            busqueda: currentSearch
+        });
+        const response = await fetch(`${baseUrl}/api/socios?${params.toString()}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -201,6 +225,15 @@ async function loadSociosData() {
             const data = await response.json();
             // Manejar respuesta paginada o array directo
             sociosData = Array.isArray(data) ? data : (data.socios || []);
+            const pag = data.paginacion;
+            if (pag) {
+                currentPage = pag.pagina;
+                totalPages = pag.total_paginas;
+                updatePagination();
+            } else {
+                totalPages = 1;
+                updatePagination();
+            }
             updateStats();
             displaySocios(sociosData);
         } else {
@@ -222,28 +255,88 @@ async function loadSociosData() {
     }
 }
 
+function updatePagination() {
+    const info = document.getElementById('pageInfo');
+    const prev = document.getElementById('btnPrevPage');
+    const next = document.getElementById('btnNextPage');
+    if (info) info.textContent = `Página ${currentPage} de ${totalPages}`;
+    if (prev) prev.disabled = currentPage <= 1;
+    if (next) next.disabled = currentPage >= totalPages;
+}
+
 // ===================================
 // Actualizar Estadísticas
 // ===================================
-function updateStats() {
-    const socios = sociosData.filter(s => s.tipo === 'socio');
-    const clientes = sociosData.filter(s => s.tipo === 'cliente');
-    const activos = sociosData.filter(s => s.estado === 'activo');
-    
-    // Nuevos este mes
-    const hoy = new Date();
-    const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-    const nuevosMes = sociosData.filter(s => new Date(s.fecha_ingreso) >= primerDiaMes);
-    
-    document.getElementById('totalSocios').textContent = socios.length;
-    document.getElementById('totalClientes').textContent = clientes.length;
-    document.getElementById('totalActivos').textContent = activos.length;
-    document.getElementById('nuevosMes').textContent = nuevosMes.length;
-    
-    // Actualizar contadores de filtros
-    document.getElementById('countTodos').textContent = sociosData.length;
-    document.getElementById('countSocios').textContent = socios.length;
-    document.getElementById('countClientes').textContent = clientes.length;
+async function updateStats() {
+    // Totales globales deben ser sobre todos los registros, no solo la página actual
+    try {
+        const token = localStorage.getItem('token');
+        const baseUrl = API_URL.replace('localhost','127.0.0.1');
+        const headers = { 'Authorization': `Bearer ${token}` };
+
+        // Obtener total general
+        const resTodos = await fetch(`${baseUrl}/api/socios?pagina=1&limite=1`, { headers });
+        // Total por tipo socio
+        const resSocios = await fetch(`${baseUrl}/api/socios?pagina=1&limite=1&tipo=socio`, { headers });
+        // Total por tipo cliente
+        const resClientes = await fetch(`${baseUrl}/api/socios?pagina=1&limite=1&tipo=cliente`, { headers });
+        // Total activos
+        const resActivos = await fetch(`${baseUrl}/api/socios?pagina=1&limite=1&estado=activo`, { headers });
+
+        const getTotal = async (res) => {
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data?.paginacion?.total ?? (Array.isArray(data) ? data.length : null);
+        };
+
+        const totalTodos = await getTotal(resTodos);
+        const totalSocios = await getTotal(resSocios);
+        const totalClientes = await getTotal(resClientes);
+        const totalActivos = await getTotal(resActivos);
+
+        if (totalSocios != null) document.getElementById('totalSocios').textContent = totalSocios;
+        if (totalClientes != null) document.getElementById('totalClientes').textContent = totalClientes;
+        if (totalActivos != null) document.getElementById('totalActivos').textContent = totalActivos;
+
+        // Nuevos este mes (global): traer una muestra amplia y contar
+        const hoy = new Date();
+        const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        let nuevosMesCount = 0;
+        try {
+            const resMes = await fetch(`${baseUrl}/api/socios?pagina=1&limite=1000`, { headers });
+            if (resMes.ok) {
+                const dataMes = await resMes.json();
+                const listaMes = Array.isArray(dataMes) ? dataMes : (dataMes.socios || []);
+                nuevosMesCount = listaMes.filter(s => s.fecha_ingreso && new Date(s.fecha_ingreso) >= primerDiaMes).length;
+            } else {
+                // respaldo: usar página actual
+                nuevosMesCount = sociosData.filter(s => new Date(s.fecha_ingreso) >= primerDiaMes).length;
+            }
+        } catch {
+            nuevosMesCount = sociosData.filter(s => new Date(s.fecha_ingreso) >= primerDiaMes).length;
+        }
+        document.getElementById('nuevosMes').textContent = nuevosMesCount;
+
+        // Contadores de filtros (usar totales globales cuando sea posible)
+        document.getElementById('countTodos').textContent = totalTodos ?? sociosData.length;
+        document.getElementById('countSocios').textContent = totalSocios ?? sociosData.filter(s => s.tipo === 'socio').length;
+        document.getElementById('countClientes').textContent = totalClientes ?? sociosData.filter(s => s.tipo === 'cliente').length;
+    } catch (e) {
+        console.warn('No se pudieron cargar los totales globales, usando datos de la página actual.', e);
+        const socios = sociosData.filter(s => s.tipo === 'socio');
+        const clientes = sociosData.filter(s => s.tipo === 'cliente');
+        const activos = sociosData.filter(s => s.estado === 'activo');
+        const hoy = new Date();
+        const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        const nuevosMes = sociosData.filter(s => new Date(s.fecha_ingreso) >= primerDiaMes);
+        document.getElementById('totalSocios').textContent = socios.length;
+        document.getElementById('totalClientes').textContent = clientes.length;
+        document.getElementById('totalActivos').textContent = activos.length;
+        document.getElementById('nuevosMes').textContent = nuevosMes.length;
+        document.getElementById('countTodos').textContent = sociosData.length;
+        document.getElementById('countSocios').textContent = socios.length;
+        document.getElementById('countClientes').textContent = clientes.length;
+    }
 }
 
 // ===================================
@@ -280,7 +373,7 @@ function displaySocios(data) {
                         ${tipoIcon} ${socio.tipo.toUpperCase()}
                     </span>
                 </td>
-                <td>${socio.telefono}</td>
+                <td>${socio.celular || socio.telefono || 'N/A'}</td>
                 <td>${socio.email || 'N/A'}</td>
                 <td>${fecha}</td>
                 <td>
@@ -310,18 +403,14 @@ function displaySocios(data) {
 // Filtrar Tabla
 // ===================================
 function filterTable() {
+    // Modo de filtro cliente para búsqueda rápida
     let filtered = sociosData;
-    
-    // Filtrar por tipo
     if (currentFilter !== 'todos') {
         filtered = filtered.filter(s => s.tipo === currentFilter);
     }
-    
-    // Filtrar por estado
     if (currentEstadoFilter !== 'todos') {
         filtered = filtered.filter(s => s.estado === currentEstadoFilter);
     }
-    
     displaySocios(filtered);
 }
 
@@ -395,6 +484,8 @@ function editSocio(id) {
     document.getElementById('apellido').value = socio.apellido;
     document.getElementById('fecha_nacimiento').value = socio.fecha_nacimiento;
     document.getElementById('genero').value = socio.genero;
+    const estadoEl = document.getElementById('estado');
+    if (estadoEl) estadoEl.value = socio.estado;
     document.getElementById('telefono').value = socio.telefono;
     document.getElementById('celular').value = socio.celular || '';
     document.getElementById('email').value = socio.email || '';
@@ -647,59 +738,200 @@ function viewSocio(id) {
     document.getElementById('detallesEstado').className = `badge ${estadoBadge}`;
     document.getElementById('detallesEstado').textContent = socio.estado.toUpperCase();
     
-    // Llenar datos personales
+    // Llenar datos personales en secciones estructuradas
     const detallesHTML = `
-        <div class="detail-item">
-            <div class="detail-label">Fecha de Nacimiento</div>
-            <div class="detail-value">${new Date(socio.fecha_nacimiento).toLocaleDateString('es-ES')}</div>
-        </div>
-        <div class="detail-item">
-            <div class="detail-label">Género</div>
-            <div class="detail-value">${socio.genero === 'M' ? 'Masculino' : socio.genero === 'F' ? 'Femenino' : 'Otro'}</div>
-        </div>
-        <div class="detail-item">
-            <div class="detail-label">Teléfono</div>
-            <div class="detail-value">${socio.telefono}</div>
-        </div>
-        <div class="detail-item">
-            <div class="detail-label">Celular</div>
-            <div class="detail-value">${socio.celular || 'N/A'}</div>
-        </div>
-        <div class="detail-item">
-            <div class="detail-label">Email</div>
-            <div class="detail-value">${socio.email || 'N/A'}</div>
-        </div>
-        <div class="detail-item">
-            <div class="detail-label">Ciudad</div>
-            <div class="detail-value">${socio.ciudad}</div>
-        </div>
-        <div class="detail-item">
-            <div class="detail-label">Departamento</div>
-            <div class="detail-value">${socio.departamento}</div>
-        </div>
-        <div class="detail-item">
-            <div class="detail-label">Dirección</div>
-            <div class="detail-value">${socio.direccion}</div>
-        </div>
-        <div class="detail-item">
-            <div class="detail-label">Ocupación</div>
-            <div class="detail-value">${socio.ocupacion || 'N/A'}</div>
-        </div>
-        <div class="detail-item">
-            <div class="detail-label">Lugar de Trabajo</div>
-            <div class="detail-value">${socio.lugar_trabajo || 'N/A'}</div>
-        </div>
-        <div class="detail-item">
-            <div class="detail-label">Ingresos Mensuales</div>
-            <div class="detail-value">${socio.ingresos_mensuales ? formatCurrency(socio.ingresos_mensuales) : 'N/A'}</div>
-        </div>
-        <div class="detail-item">
-            <div class="detail-label">Fecha de Ingreso</div>
-            <div class="detail-value">${new Date(socio.fecha_ingreso).toLocaleDateString('es-ES')}</div>
+        <div class="details-sections">
+            <section class="details-section">
+                <h4 class="details-section-title">👤 Datos Personales</h4>
+                <div class="details-list">
+                    <div class="details-row"><span class="details-key">Fecha de Nacimiento</span><span class="details-value">${new Date(socio.fecha_nacimiento).toLocaleDateString('es-ES')}</span></div>
+                    <div class="details-row"><span class="details-key">Género</span><span class="details-value">${socio.genero === 'M' ? 'Masculino' : socio.genero === 'F' ? 'Femenino' : 'Otro'}</span></div>
+                </div>
+            </section>
+
+            <section class="details-section">
+                <h4 class="details-section-title">📞 Contacto</h4>
+                <div class="details-list">
+                    <div class="details-row"><span class="details-key">Celular</span><span class="details-value">${socio.celular || 'N/A'}</span></div>
+                    <div class="details-row"><span class="details-key">Teléfono</span><span class="details-value">${socio.telefono || 'N/A'}</span></div>
+                    <div class="details-row"><span class="details-key">Email</span><span class="details-value">${socio.email || 'N/A'}</span></div>
+                </div>
+            </section>
+
+            <section class="details-section">
+                <h4 class="details-section-title">📍 Dirección</h4>
+                <div class="details-list">
+                    <div class="details-row"><span class="details-key">Departamento</span><span class="details-value">${socio.departamento}</span></div>
+                    <div class="details-row"><span class="details-key">Ciudad</span><span class="details-value">${socio.ciudad}</span></div>
+                    <div class="details-row details-row-full"><span class="details-key">Dirección</span><span class="details-value">${socio.direccion}</span></div>
+                </div>
+            </section>
+
+            <section class="details-section">
+                <h4 class="details-section-title">🧑‍💼 Información Laboral</h4>
+                <div class="details-list">
+                    <div class="details-row"><span class="details-key">Ocupación</span><span class="details-value">${socio.ocupacion || 'N/A'}</span></div>
+                    <div class="details-row"><span class="details-key">Lugar de Trabajo</span><span class="details-value">${socio.lugar_trabajo || 'N/A'}</span></div>
+                    <div class="details-row"><span class="details-key">Ingresos Mensuales</span><span class="details-value">${socio.ingresos_mensuales ? formatCurrency(socio.ingresos_mensuales) : 'N/A'}</span></div>
+                </div>
+            </section>
+
+            <section class="details-section">
+                <h4 class="details-section-title">🎟️ Membresía</h4>
+                <div class="details-list">
+                    <div class="details-row"><span class="details-key">Fecha de Ingreso</span><span class="details-value">${socio.fecha_ingreso ? new Date(socio.fecha_ingreso).toLocaleDateString('es-ES') : 'N/A'}</span></div>
+                </div>
+            </section>
         </div>
     `;
     
     document.getElementById('detallesPersonales').innerHTML = detallesHTML;
+
+    // Preparar tabs con estructura ordenada
+    // Cargar datos reales para tabs
+    const cuentasHTML = `
+        <div class="details-sections">
+            <section class="details-section">
+                <h4 class="details-section-title">💳 Cuentas</h4>
+                <div class="details-list" id="listaCuentas">
+                    <div class="details-row details-row-full">
+                        <span class="details-key">Cargando</span>
+                        <span class="details-value">Cuentas...</span>
+                    </div>
+                </div>
+            </section>
+        </div>`;
+
+    const prestamosHTML = `
+        <div class="details-sections">
+            <section class="details-section">
+                <h4 class="details-section-title">🧾 Préstamos</h4>
+                <div class="details-list" id="listaPrestamos">
+                    <div class="details-row details-row-full">
+                        <span class="details-key">Cargando</span>
+                        <span class="details-value">Préstamos...</span>
+                    </div>
+                </div>
+            </section>
+        </div>`;
+
+    const historialHTML = `
+        <div class="details-sections">
+            <section class="details-section">
+                <h4 class="details-section-title">📚 Historial</h4>
+                <div class="details-list">
+                    <div class="details-row">
+                        <span class="details-key">Última actualización</span>
+                        <span class="details-value">${new Date().toLocaleDateString('es-ES')}</span>
+                    </div>
+                    <div class="details-row">
+                        <span class="details-key">Notas</span>
+                        <span class="details-value">${socio.notas || 'Sin notas registradas'}</span>
+                    </div>
+                </div>
+            </section>
+        </div>`;
+
+    const tabCuentas = document.getElementById('tabCuentas');
+    const tabPrestamos = document.getElementById('tabPrestamos');
+    const tabHistorial = document.getElementById('tabHistorial');
+    if (tabCuentas) tabCuentas.innerHTML = cuentasHTML;
+    if (tabPrestamos) tabPrestamos.innerHTML = prestamosHTML;
+    if (tabHistorial) tabHistorial.innerHTML = historialHTML;
+
+    // Fetch cuentas por socio (backend soporta filtro id_socio)
+    (async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const baseUrl = API_URL.replace('localhost','127.0.0.1');
+            const cuentasRes = await fetch(`${baseUrl}/api/cuentas?id_socio=${socio.id}&limite=50`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const listaCuentasEl = document.getElementById('listaCuentas');
+            if (cuentasRes.ok) {
+                const cuentasJson = await cuentasRes.json();
+                const cuentas = cuentasJson.cuentas || [];
+                if (!cuentas.length) {
+                    listaCuentasEl.innerHTML = `
+                        <div class='details-row details-row-full'>
+                            <span class='details-key'>Estado</span>
+                            <span class='details-value'>Sin cuentas registradas</span>
+                        </div>`;
+                } else {
+                    listaCuentasEl.innerHTML = cuentas.map(c => `
+                        <div class='details-row'>
+                            <span class='details-key'>Número</span>
+                            <span class='details-value'>${c.numero_cuenta}</span>
+                        </div>
+                        <div class='details-row'>
+                            <span class='details-key'>Tipo</span>
+                            <span class='details-value'>${(c.tipo || c.tipo_cuenta || '').toString().replace('_',' ').toUpperCase()}</span>
+                        </div>
+                        <div class='details-row'>
+                            <span class='details-key'>Saldo</span>
+                            <span class='details-value'>${formatCurrency(c.saldo || 0)}</span>
+                        </div>
+                        <div class='details-row'>
+                            <span class='details-key'>Estado</span>
+                            <span class='details-value'>${(c.estado || 'activa').toUpperCase()}</span>
+                        </div>
+                    `).join('');
+                }
+            } else {
+                listaCuentasEl.innerHTML = `<div class='details-row details-row-full'><span class='details-key'>Error</span><span class='details-value'>No se pudieron cargar las cuentas</span></div>`;
+            }
+        } catch (e) {
+            const listaCuentasEl = document.getElementById('listaCuentas');
+            if (listaCuentasEl) listaCuentasEl.innerHTML = `<div class='details-row details-row-full'><span class='details-key'>Error</span><span class='details-value'>${e.message}</span></div>`;
+        }
+    })();
+
+    // Fetch préstamos y filtrar por id_socio (ruta no tiene filtro, se filtra cliente)
+    (async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const baseUrl = API_URL.replace('localhost','127.0.0.1');
+            const presRes = await fetch(`${baseUrl}/api/prestamos`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const listaPrestamosEl = document.getElementById('listaPrestamos');
+            if (presRes.ok) {
+                const prestamos = await presRes.json();
+                const propios = prestamos.filter(p => p.id_socio === socio.id);
+                if (!propios.length) {
+                    listaPrestamosEl.innerHTML = `
+                        <div class='details-row details-row-full'>
+                            <span class='details-key'>Estado</span>
+                            <span class='details-value'>Sin préstamos registrados</span>
+                        </div>`;
+                } else {
+                    listaPrestamosEl.innerHTML = propios.map(p => `
+                        <div class='details-row'>
+                            <span class='details-key'>Número</span>
+                            <span class='details-value'>${p.numero_prestamo}</span>
+                        </div>
+                        <div class='details-row'>
+                            <span class='details-key'>Monto</span>
+                            <span class='details-value'>${formatCurrency(p.monto || 0)}</span>
+                        </div>
+                        <div class='details-row'>
+                            <span class='details-key'>Cuota</span>
+                            <span class='details-value'>${formatCurrency(p.cuota_mensual || 0)}</span>
+                        </div>
+                        <div class='details-row'>
+                            <span class='details-key'>Estado</span>
+                            <span class='details-value'>${(p.estado || '').toUpperCase()}</span>
+                        </div>
+                    `).join('');
+                }
+            } else {
+                listaPrestamosEl.innerHTML = `<div class='details-row details-row-full'><span class='details-key'>Error</span><span class='details-value'>No se pudieron cargar los préstamos</span></div>`;
+            }
+        } catch (e) {
+            const listaPrestamosEl = document.getElementById('listaPrestamos');
+            if (listaPrestamosEl) listaPrestamosEl.innerHTML = `<div class='details-row details-row-full'><span class='details-key'>Error</span><span class='details-value'>${e.message}</span></div>`;
+        }
+    })();
     
     // Botón editar
     document.getElementById('btnEditarDetalles').onclick = () => {

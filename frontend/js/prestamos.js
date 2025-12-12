@@ -14,6 +14,10 @@ let cuentas = [];
 let pagos = [];
 let filtroActual = 'todos';
 let prestamoActual = null;
+// Paginación
+let currentPagePrestamos = 1;
+const PAGE_SIZE_PRESTAMOS = 15;
+let totalPagesPrestamos = 1;
 
 // ============================================
 // INICIALIZACIÓN
@@ -111,6 +115,22 @@ function initEventListeners() {
                 modal.classList.remove('show');
             }
         });
+    });
+
+    // Paginación
+    const btnPrev = document.getElementById('btnPrevPagePrestamos');
+    const btnNext = document.getElementById('btnNextPagePrestamos');
+    if (btnPrev) btnPrev.addEventListener('click', () => {
+        if (currentPagePrestamos > 1) {
+            currentPagePrestamos--;
+            renderizarPrestamos();
+        }
+    });
+    if (btnNext) btnNext.addEventListener('click', () => {
+        if (currentPagePrestamos < totalPagesPrestamos) {
+            currentPagePrestamos++;
+            renderizarPrestamos();
+        }
     });
 }
 
@@ -261,6 +281,10 @@ function renderizarPrestamos() {
         return true;
     });
     
+    // Actualizar páginas
+    totalPagesPrestamos = Math.max(1, Math.ceil(prestamosFiltrados.length / PAGE_SIZE_PRESTAMOS));
+    if (currentPagePrestamos > totalPagesPrestamos) currentPagePrestamos = totalPagesPrestamos;
+
     if (prestamosFiltrados.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -270,10 +294,16 @@ function renderizarPrestamos() {
                 </td>
             </tr>
         `;
+        actualizarPaginacionPrestamos();
         return;
     }
     
-    tbody.innerHTML = prestamosFiltrados.map(prestamo => {
+    // Slice por página
+    const startIndex = (currentPagePrestamos - 1) * PAGE_SIZE_PRESTAMOS;
+    const endIndex = startIndex + PAGE_SIZE_PRESTAMOS;
+    const prestamosPagina = prestamosFiltrados.slice(startIndex, endIndex);
+
+    tbody.innerHTML = prestamosPagina.map(prestamo => {
         const cuotaMensual = calcularCuotaMensual(
             prestamo.monto,
             prestamo.tasa_interes,
@@ -314,6 +344,8 @@ function renderizarPrestamos() {
             </tr>
         `;
     }).join('');
+
+    actualizarPaginacionPrestamos();
 }
 
 // ============================================
@@ -325,6 +357,7 @@ function handleFilterClick(btn) {
     btn.classList.add('active');
     
     filtroActual = btn.dataset.filter;
+    currentPagePrestamos = 1;
     renderizarPrestamos();
 }
 
@@ -332,6 +365,7 @@ function handleGlobalSearch(e) {
     const busqueda = e.target.value.toLowerCase().trim();
     
     if (!busqueda) {
+        currentPagePrestamos = 1;
         renderizarPrestamos();
         return;
     }
@@ -356,10 +390,17 @@ function handleGlobalSearch(e) {
                 </td>
             </tr>
         `;
+        totalPagesPrestamos = 1;
+        actualizarPaginacionPrestamos();
         return;
     }
     
-    tbody.innerHTML = prestamosFiltrados.map(prestamo => {
+    // Reiniciar página y mostrar primera
+    currentPagePrestamos = 1;
+    totalPagesPrestamos = Math.max(1, Math.ceil(prestamosFiltrados.length / PAGE_SIZE_PRESTAMOS));
+    const prestamosPagina = prestamosFiltrados.slice(0, PAGE_SIZE_PRESTAMOS);
+
+    tbody.innerHTML = prestamosPagina.map(prestamo => {
         const cuotaMensual = calcularCuotaMensual(
             prestamo.monto,
             prestamo.tasa_interes,
@@ -392,6 +433,23 @@ function handleGlobalSearch(e) {
             </tr>
         `;
     }).join('');
+
+    actualizarPaginacionPrestamos();
+}
+
+// ============================================
+// Paginación UI
+// ============================================
+function actualizarPaginacionPrestamos() {
+    const pageInfo = document.getElementById('pageInfoPrestamos');
+    const btnPrev = document.getElementById('btnPrevPagePrestamos');
+    const btnNext = document.getElementById('btnNextPagePrestamos');
+    const pagination = document.getElementById('prestamosPagination');
+    if (!pageInfo || !btnPrev || !btnNext || !pagination) return;
+    pageInfo.textContent = `Página ${currentPagePrestamos} de ${totalPagesPrestamos}`;
+    btnPrev.disabled = currentPagePrestamos <= 1;
+    btnNext.disabled = currentPagePrestamos >= totalPagesPrestamos;
+    pagination.style.display = totalPagesPrestamos > 1 ? 'flex' : 'none';
 }
 
 // ============================================
