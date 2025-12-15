@@ -6,6 +6,10 @@
     <title>Cuentas - COOP-SMART</title>
     <link rel="stylesheet" href="css/pagos.css">
     <link rel="stylesheet" href="css/cuentas.css">
+    <!-- Librerías para exportación -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -19,7 +23,7 @@
                 </div>
             </div>
             
-            <div class="header-search">
+            <div class="header-search" style="display:none;">
                 <input type="text" id="globalSearch" placeholder="Buscar por préstamo, socio, referencia..." class="search-input">
                 <span class="search-icon">�</span>
             </div>
@@ -99,33 +103,59 @@
         </div>
 
         <!-- Filters and Actions -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header" style="display:flex; align-items:center; justify-content:space-between; gap:1rem;">
+                <h3 style="margin:0;">🔍 Filtros de Búsqueda</h3>
+                <!-- Barra de búsqueda principal -->
+                <div class="search-group" style="min-width: 420px; flex: 0 1 520px;">
+                    <span class="search-group-icon">🔎</span>
+                    <input type="text" id="busquedaInput" class="search-input" placeholder="Buscar por número de cuenta, titular...">
+                    <div class="search-group-actions">
+                        <button type="button" class="btn-secondary" id="btnBuscar">Buscar</button>
+                        <button type="button" class="btn-secondary" id="btnLimpiarBusqueda">Limpiar</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 1.5rem;">
+                <div style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: flex-end;">
+                    <div class="filter-group">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4B5563;">Tipo de Cuenta</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="filter-btn active" data-filter="todas">
+                                Todas <span class="filter-count" id="countTodas">0</span>
+                            </button>
+                            <button class="filter-btn" data-filter="ahorro">
+                                💎 Ahorro <span class="filter-count" id="countAhorro">0</span>
+                            </button>
+                            <button class="filter-btn" data-filter="corriente">
+                                💳 Corriente <span class="filter-count" id="countCorriente">0</span>
+                            </button>
+                            <button class="filter-btn" data-filter="plazo_fijo">
+                                🔒 Plazo Fijo <span class="filter-count" id="countPlazo">0</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4B5563;">Estado</label>
+                        <select class="filter-select" id="estadoFilter" style="min-width: 200px; padding: 0.5rem; border-radius: 8px; border: 1px solid #E5E7EB;">
+                            <option value="todas">Todos los estados</option>
+                            <option value="activa">Activas</option>
+                            <option value="inactiva">Inactivas</option>
+                            <option value="bloqueada">Bloqueadas</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Section -->
         <div class="card">
             <div class="card-header">
                 <h3>📋 Listado de Cuentas</h3>
-                <div class="toolbar">
-                    <div class="filter-group">
-                        <button class="filter-btn active" data-filter="todas">
-                            Todas <span class="filter-count" id="countTodas">0</span>
-                        </button>
-                        <button class="filter-btn" data-filter="ahorro">
-                            💎 Ahorro <span class="filter-count" id="countAhorro">0</span>
-                        </button>
-                        <button class="filter-btn" data-filter="corriente">
-                            💳 Corriente <span class="filter-count" id="countCorriente">0</span>
-                        </button>
-                        <button class="filter-btn" data-filter="plazo_fijo">
-                            🔒 Plazo Fijo <span class="filter-count" id="countPlazo">0</span>
-                        </button>
-                    </div>
-                    <select class="filter-select" id="estadoFilter">
-                        <option value="todas">Todos los estados</option>
-                        <option value="activa">Activas</option>
-                        <option value="inactiva">Inactivas</option>
-                        <option value="bloqueada">Bloqueadas</option>
-                    </select>
-                    <button class="btn-secondary" id="btnExportar">
-                        📥 Exportar
-                    </button>
+                <div class="toolbar" style="display: flex; gap: 0.5rem;">
+                    <button class="btn-secondary" id="btnExportarCSV" data-permiso="CUENTAS_VER">📄 CSV</button>
+                    <button class="btn-secondary" id="btnExportarExcel" data-permiso="CUENTAS_VER">📊 Excel</button>
+                    <button class="btn-secondary" id="btnExportarPDF" data-permiso="CUENTAS_VER">📕 PDF</button>
                 </div>
             </div>
 
@@ -461,6 +491,7 @@
         </div>
     </div>
 
+    <script src="js/utils.js"></script>
     <script src="js/cuentas.js"></script>
 </body>
 </html>

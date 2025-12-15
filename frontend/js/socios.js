@@ -123,10 +123,12 @@ document.addEventListener('DOMContentLoaded', () => {
         btnNuevo.addEventListener('click', openNewModal);
     }
     
-    const btnExportar = document.getElementById('btnExportar');
-    if (btnExportar) {
-        btnExportar.addEventListener('click', exportarDatos);
-    }
+    const btnCSV = document.getElementById('btnExportarCSV');
+    const btnExcel = document.getElementById('btnExportarExcel');
+    const btnPDF = document.getElementById('btnExportarPDF');
+    if (btnCSV) btnCSV.addEventListener('click', exportarCSV);
+    if (btnExcel) btnExcel.addEventListener('click', exportarExcel);
+    if (btnPDF) btnPDF.addEventListener('click', exportarPDF);
     
     // Modal
     const btnCloseModal = document.getElementById('btnCloseModal');
@@ -957,10 +959,62 @@ function switchTab(tab) {
 }
 
 // ===================================
-// Exportar Datos
+// Exportar Datos (CSV, EXCEL, PDF)
 // ===================================
-function exportarDatos() {
-    showNotification('Función de exportación en desarrollo', 'info');
+
+// Columnas para exportación
+const COLUMNAS_SOCIOS = [
+    { key: 'id', header: 'ID' },
+    { key: 'numero_identidad', header: 'Identidad' },
+    { key: 'nombre_completo', header: 'Nombre Completo' },
+    { key: 'tipo', header: 'Tipo' },
+    { key: 'telefono', header: 'Teléfono' },
+    { key: 'email', header: 'Email' },
+    { key: 'fecha_ingreso_fmt', header: 'Fecha Ingreso', tipo: 'fecha' },
+    { key: 'estado', header: 'Estado' }
+];
+
+function prepararDatosExportacion() {
+    return sociosData.map(s => ({
+        id: s.id,
+        numero_identidad: s.numero_identidad || '',
+        nombre_completo: `${s.nombre || ''} ${s.apellido || ''}`.trim(),
+        tipo: s.tipo === 'socio' ? 'Socio' : 'Cliente',
+        telefono: s.telefono || '',
+        email: s.email || '',
+        fecha_ingreso_fmt: s.fecha_ingreso ? new Date(s.fecha_ingreso).toLocaleDateString('es-HN') : '',
+        estado: s.estado ? s.estado.charAt(0).toUpperCase() + s.estado.slice(1) : ''
+    }));
+}
+
+function exportarCSV() {
+    const datos = prepararDatosExportacion();
+    if (window.COOP_UTILS) {
+        window.COOP_UTILS.exportarCSV(datos, 'socios_coop_smart', COLUMNAS_SOCIOS);
+    } else {
+        showNotification('Error al exportar CSV', 'error');
+    }
+}
+
+function exportarExcel() {
+    const datos = prepararDatosExportacion();
+    if (window.COOP_UTILS) {
+        window.COOP_UTILS.exportarExcel(datos, 'socios_coop_smart', COLUMNAS_SOCIOS, 'Socios');
+    } else {
+        showNotification('La librería de Excel no está disponible', 'error');
+    }
+}
+
+function exportarPDF() {
+    const datos = prepararDatosExportacion();
+    if (window.COOP_UTILS) {
+        window.COOP_UTILS.exportarPDF(datos, 'socios_coop_smart', COLUMNAS_SOCIOS, {
+            titulo: 'Listado de Socios y Clientes - COOP-SMART',
+            orientacion: 'landscape'
+        });
+    } else {
+        showNotification('La librería de PDF no está disponible', 'error');
+    }
 }
 
 // ===================================

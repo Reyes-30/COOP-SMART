@@ -14,21 +14,21 @@ exports.getResumenFinanciero = async (req, res) => {
     const resultado = await sequelize.query(`
       SELECT 
         -- Total de Socios
-        (SELECT COUNT(*) FROM socios WHERE estado = 'Activo') as total_socios_activos,
+        (SELECT COUNT(*) FROM socios WHERE estado = 'activo') as total_socios_activos,
         (SELECT COUNT(*) FROM socios) as total_socios,
         
         -- Cuentas
-        (SELECT COUNT(*) FROM cuentas WHERE estado = 'Activa') as total_cuentas_activas,
-        (SELECT COALESCE(SUM(saldo), 0) FROM cuentas WHERE estado = 'Activa') as saldo_total_cuentas,
+        (SELECT COUNT(*) FROM cuentas WHERE estado = 'activa') as total_cuentas_activas,
+        (SELECT COALESCE(SUM(saldo), 0) FROM cuentas WHERE estado = 'activa') as saldo_total_cuentas,
         
         -- Préstamos
-        (SELECT COUNT(*) FROM prestamos WHERE estado = 'Aprobado') as prestamos_activos,
-        (SELECT COUNT(*) FROM prestamos WHERE estado = 'Pendiente') as prestamos_pendientes,
-        (SELECT COALESCE(SUM(monto), 0) FROM prestamos WHERE estado = 'Aprobado') as monto_total_prestamos,
-        (SELECT COALESCE(SUM(saldo_pendiente), 0) FROM prestamos WHERE estado = 'Aprobado') as saldo_pendiente_total,
+        (SELECT COUNT(*) FROM prestamos WHERE estado IN ('aprobado', 'activo', 'desembolsado')) as prestamos_activos,
+        (SELECT COUNT(*) FROM prestamos WHERE estado IN ('solicitado', 'en_revision')) as prestamos_pendientes,
+        (SELECT COALESCE(SUM(monto_aprobado), 0) FROM prestamos WHERE estado IN ('aprobado', 'activo', 'desembolsado')) as monto_total_prestamos,
+        (SELECT COALESCE(SUM(saldo_pendiente), 0) FROM prestamos WHERE estado IN ('aprobado', 'activo', 'desembolsado')) as saldo_pendiente_total,
         
         -- Pagos del período
-        (SELECT COALESCE(SUM(monto_pago), 0) 
+        (SELECT COALESCE(SUM(monto), 0) 
          FROM pagos 
          WHERE fecha_pago >= :fechaInicio AND fecha_pago <= :fechaFin) as total_pagos_periodo,
         (SELECT COUNT(*) 
@@ -38,13 +38,13 @@ exports.getResumenFinanciero = async (req, res) => {
         -- Transacciones del período
         (SELECT COALESCE(SUM(monto), 0) 
          FROM transacciones 
-         WHERE tipo = 'Deposito' AND fecha >= :fechaInicio AND fecha <= :fechaFin) as total_depositos,
+         WHERE tipo = 'deposito' AND fecha_transaccion >= :fechaInicio AND fecha_transaccion <= :fechaFin) as total_depositos,
         (SELECT COALESCE(SUM(monto), 0) 
          FROM transacciones 
-         WHERE tipo = 'Retiro' AND fecha >= :fechaInicio AND fecha <= :fechaFin) as total_retiros,
+         WHERE tipo = 'retiro' AND fecha_transaccion >= :fechaInicio AND fecha_transaccion <= :fechaFin) as total_retiros,
         (SELECT COUNT(*) 
          FROM transacciones 
-         WHERE fecha >= :fechaInicio AND fecha <= :fechaFin) as total_transacciones
+         WHERE fecha_transaccion >= :fechaInicio AND fecha_transaccion <= :fechaFin) as total_transacciones
     `, {
       replacements: {
         fechaInicio: fechaInicio || '2000-01-01',
@@ -92,7 +92,7 @@ exports.getCuentasPorTipo = async (req, res) => {
         MAX(saldo) as saldo_maximo,
         MIN(saldo) as saldo_minimo
       FROM cuentas
-      WHERE estado = 'Activa'
+      WHERE estado = 'activa'
       GROUP BY tipo_cuenta
       ORDER BY saldo_total DESC
     `, { type: QueryTypes.SELECT });
@@ -129,18 +129,18 @@ exports.getPrestamosDetallado = async (req, res) => {
         p.fecha_solicitud,
         s.nombre as socio_nombre,
         s.apellido as socio_apellido,
-        s.identificacion as socio_identificacion,
-        p.monto,
+        s.identidad as socio_identificacion,
+        p.monto_aprobado as monto,
         p.tasa_interes,
         p.plazo_meses,
         p.cuota_mensual,
         p.saldo_pendiente,
         p.estado,
         p.fecha_aprobacion,
-        (SELECT COUNT(*) FROM pagos WHERE prestamo_id = p.id) as pagos_realizados,
-        (SELECT COALESCE(SUM(monto_pago), 0) FROM pagos WHERE prestamo_id = p.id) as total_pagado
+        (SELECT COUNT(*) FROM pagos WHERE id_prestamo = p.id) as pagos_realizados,
+        (SELECT COALESCE(SUM(monto), 0) FROM pagos WHERE id_prestamo = p.id) as total_pagado
       FROM prestamos p
-      INNER JOIN socios s ON p.socio_id = s.id
+      INNER JOIN socios s ON p.id_socio = s.id
       WHERE ${whereClause}
       ORDER BY p.fecha_solicitud DESC
     `, {
@@ -163,25 +163,25 @@ exports.getPrestamosEnMora = async (req, res) => {
         p.id,
         s.nombre,
         s.apellido,
-        s.identificacion,
+        s.identidad as identificacion,
         s.telefono,
-        p.monto,
+        p.monto_aprobado as monto,
         p.saldo_pendiente,
         p.cuota_mensual,
         p.fecha_solicitud,
         p.plazo_meses,
-        (SELECT COUNT(*) FROM pagos WHERE prestamo_id = p.id) as pagos_realizados,
-        (p.plazo_meses - (SELECT COUNT(*) FROM pagos WHERE prestamo_id = p.id)) as cuotas_pendientes,
+        (SELECT COUNT(*) FROM pagos WHERE id_prestamo = p.id) as pagos_realizados,
+        (p.plazo_meses - (SELECT COUNT(*) FROM pagos WHERE id_prestamo = p.id)) as cuotas_pendientes,
         DATEDIFF(CURDATE(), 
           DATE_ADD(p.fecha_aprobacion, 
-            INTERVAL (SELECT COUNT(*) FROM pagos WHERE prestamo_id = p.id) + 1 MONTH)
+            INTERVAL (SELECT COUNT(*) FROM pagos WHERE id_prestamo = p.id) + 1 MONTH)
         ) as dias_mora
       FROM prestamos p
-      INNER JOIN socios s ON p.socio_id = s.id
-      WHERE p.estado = 'Aprobado'
+      INNER JOIN socios s ON p.id_socio = s.id
+      WHERE p.estado IN ('aprobado', 'activo', 'desembolsado')
         AND DATEDIFF(CURDATE(), 
           DATE_ADD(p.fecha_aprobacion, 
-            INTERVAL (SELECT COUNT(*) FROM pagos WHERE prestamo_id = p.id) + 1 MONTH)
+            INTERVAL (SELECT COUNT(*) FROM pagos WHERE id_prestamo = p.id) + 1 MONTH)
         ) > 0
       ORDER BY dias_mora DESC
     `, { type: QueryTypes.SELECT });
@@ -202,8 +202,8 @@ exports.getPagosPorPeriodo = async (req, res) => {
       SELECT 
         DATE_FORMAT(pg.fecha_pago, '%Y-%m') as mes,
         COUNT(*) as cantidad_pagos,
-        COALESCE(SUM(pg.monto_pago), 0) as total_pagado,
-        ROUND(AVG(pg.monto_pago), 2) as promedio_pago
+        COALESCE(SUM(pg.monto), 0) as total_pagado,
+        ROUND(AVG(pg.monto), 2) as promedio_pago
       FROM pagos pg
       WHERE pg.fecha_pago >= :fechaInicio 
         AND pg.fecha_pago <= :fechaFin
@@ -262,14 +262,14 @@ exports.getEvolucionSaldos = async (req, res) => {
 
     const resultado = await sequelize.query(`
       SELECT 
-        DATE_FORMAT(t.fecha, '%Y-%m') as mes,
-        SUM(CASE WHEN t.tipo = 'Deposito' THEN t.monto ELSE 0 END) as depositos,
-        SUM(CASE WHEN t.tipo = 'Retiro' THEN t.monto ELSE 0 END) as retiros,
-        SUM(CASE WHEN t.tipo = 'Deposito' THEN t.monto ELSE -t.monto END) as saldo_neto
+        DATE_FORMAT(t.fecha_transaccion, '%Y-%m') as mes,
+        SUM(CASE WHEN t.tipo = 'deposito' THEN t.monto ELSE 0 END) as depositos,
+        SUM(CASE WHEN t.tipo = 'retiro' THEN t.monto ELSE 0 END) as retiros,
+        SUM(CASE WHEN t.tipo = 'deposito' THEN t.monto ELSE -t.monto END) as saldo_neto
       FROM transacciones t
-      WHERE t.fecha >= :fechaInicio 
-        AND t.fecha <= :fechaFin
-      GROUP BY DATE_FORMAT(t.fecha, '%Y-%m')
+      WHERE t.fecha_transaccion >= :fechaInicio 
+        AND t.fecha_transaccion <= :fechaFin
+      GROUP BY DATE_FORMAT(t.fecha_transaccion, '%Y-%m')
       ORDER BY mes ASC
     `, {
       replacements: {
@@ -296,17 +296,17 @@ exports.getTopSocios = async (req, res) => {
         s.id,
         s.nombre,
         s.apellido,
-        s.identificacion,
+        s.identidad as identificacion,
         s.fecha_ingreso,
         COUNT(DISTINCT c.id) as total_cuentas,
         COALESCE(SUM(c.saldo), 0) as saldo_total,
         COUNT(DISTINCT p.id) as total_prestamos,
         COALESCE(SUM(p.saldo_pendiente), 0) as deuda_total
       FROM socios s
-      LEFT JOIN cuentas c ON s.id = c.socio_id AND c.estado = 'Activa'
-      LEFT JOIN prestamos p ON s.id = p.socio_id AND p.estado = 'Aprobado'
-      WHERE s.estado = 'Activo'
-      GROUP BY s.id, s.nombre, s.apellido, s.identificacion, s.fecha_ingreso
+      LEFT JOIN cuentas c ON s.id = c.id_socio AND c.estado = 'activa'
+      LEFT JOIN prestamos p ON s.id = p.id_socio AND p.estado IN ('aprobado', 'activo', 'desembolsado')
+      WHERE s.estado = 'activo'
+      GROUP BY s.id, s.nombre, s.apellido, s.identidad, s.fecha_ingreso
       ORDER BY saldo_total DESC
       LIMIT :limite
     `, {
@@ -349,36 +349,36 @@ exports.getAnalisisRentabilidad = async (req, res) => {
     const resultado = await sequelize.query(`
       SELECT 
         -- Ingresos por intereses de préstamos
-        (SELECT COALESCE(SUM(p.monto * (p.tasa_interes / 100) * (p.plazo_meses / 12)), 0)
+        (SELECT COALESCE(SUM(p.monto_aprobado * (p.tasa_interes / 100) * (p.plazo_meses / 12)), 0)
          FROM prestamos p
-         WHERE p.estado = 'Aprobado'
+         WHERE p.estado IN ('aprobado', 'activo', 'desembolsado')
            AND p.fecha_aprobacion >= :fechaInicio 
            AND p.fecha_aprobacion <= :fechaFin) as ingresos_intereses,
         
         -- Total de pagos recibidos
-        (SELECT COALESCE(SUM(monto_pago), 0)
+        (SELECT COALESCE(SUM(monto), 0)
          FROM pagos
          WHERE fecha_pago >= :fechaInicio 
            AND fecha_pago <= :fechaFin) as total_pagos_recibidos,
         
         -- Préstamos desembolsados
-        (SELECT COALESCE(SUM(monto), 0)
+        (SELECT COALESCE(SUM(monto_aprobado), 0)
          FROM prestamos
-         WHERE estado = 'Aprobado'
+         WHERE estado IN ('aprobado', 'activo', 'desembolsado')
            AND fecha_aprobacion >= :fechaInicio 
            AND fecha_aprobacion <= :fechaFin) as total_desembolsado,
         
         -- Cantidad de préstamos aprobados
         (SELECT COUNT(*)
          FROM prestamos
-         WHERE estado = 'Aprobado'
+         WHERE estado IN ('aprobado', 'activo', 'desembolsado')
            AND fecha_aprobacion >= :fechaInicio 
            AND fecha_aprobacion <= :fechaFin) as prestamos_aprobados,
         
         -- Saldo total en cuentas
         (SELECT COALESCE(SUM(saldo), 0)
          FROM cuentas
-         WHERE estado = 'Activa') as saldo_total_sistema
+         WHERE estado = 'activa') as saldo_total_sistema
     `, {
       replacements: {
         fechaInicio: fechaInicio || '2000-01-01',
@@ -400,19 +400,19 @@ exports.getPrestamosRangoMonto = async (req, res) => {
     const resultado = await sequelize.query(`
       SELECT 
         CASE
-          WHEN monto < 10000 THEN 'Menos de L. 10,000'
-          WHEN monto >= 10000 AND monto < 50000 THEN 'L. 10,000 - L. 50,000'
-          WHEN monto >= 50000 AND monto < 100000 THEN 'L. 50,000 - L. 100,000'
-          WHEN monto >= 100000 AND monto < 200000 THEN 'L. 100,000 - L. 200,000'
+          WHEN monto_aprobado < 10000 THEN 'Menos de L. 10,000'
+          WHEN monto_aprobado >= 10000 AND monto_aprobado < 50000 THEN 'L. 10,000 - L. 50,000'
+          WHEN monto_aprobado >= 50000 AND monto_aprobado < 100000 THEN 'L. 50,000 - L. 100,000'
+          WHEN monto_aprobado >= 100000 AND monto_aprobado < 200000 THEN 'L. 100,000 - L. 200,000'
           ELSE 'Más de L. 200,000'
         END as rango_monto,
         COUNT(*) as cantidad,
-        COALESCE(SUM(monto), 0) as total_monto,
+        COALESCE(SUM(monto_aprobado), 0) as total_monto,
         ROUND(AVG(tasa_interes), 2) as tasa_promedio
       FROM prestamos
-      WHERE estado = 'Aprobado'
+      WHERE estado IN ('aprobado', 'activo', 'desembolsado')
       GROUP BY rango_monto
-      ORDER BY MIN(monto)
+      ORDER BY MIN(monto_aprobado)
     `, { type: QueryTypes.SELECT });
 
     res.json(resultado);
@@ -437,18 +437,18 @@ exports.getMovimientosCuenta = async (req, res) => {
         t.tipo,
         t.monto,
         t.descripcion,
-        t.fecha,
+        t.fecha_transaccion as fecha,
         c.numero_cuenta,
         c.tipo_cuenta,
         s.nombre as socio_nombre,
         s.apellido as socio_apellido
       FROM transacciones t
-      INNER JOIN cuentas c ON t.cuenta_id = c.id
-      INNER JOIN socios s ON c.socio_id = s.id
-      WHERE t.cuenta_id = :cuentaId
-        AND t.fecha >= :fechaInicio
-        AND t.fecha <= :fechaFin
-      ORDER BY t.fecha DESC
+      INNER JOIN cuentas c ON t.id_cuenta = c.id
+      INNER JOIN socios s ON c.id_socio = s.id
+      WHERE t.id_cuenta = :cuentaId
+        AND t.fecha_transaccion >= :fechaInicio
+        AND t.fecha_transaccion <= :fechaFin
+      ORDER BY t.fecha_transaccion DESC
     `, {
       replacements: {
         cuentaId,
@@ -479,30 +479,30 @@ exports.getEstadoCuentaSocio = async (req, res) => {
         s.id,
         s.nombre,
         s.apellido,
-        s.identificacion,
+        s.identidad as identificacion,
         s.telefono,
         s.email,
         s.fecha_ingreso,
         s.estado,
         
         -- Cuentas
-        (SELECT COUNT(*) FROM cuentas WHERE socio_id = s.id AND estado = 'Activa') as total_cuentas,
-        (SELECT COALESCE(SUM(saldo), 0) FROM cuentas WHERE socio_id = s.id AND estado = 'Activa') as saldo_total,
+        (SELECT COUNT(*) FROM cuentas WHERE id_socio = s.id AND estado = 'activa') as total_cuentas,
+        (SELECT COALESCE(SUM(saldo), 0) FROM cuentas WHERE id_socio = s.id AND estado = 'activa') as saldo_total,
         
         -- Préstamos
-        (SELECT COUNT(*) FROM prestamos WHERE socio_id = s.id AND estado = 'Aprobado') as prestamos_activos,
-        (SELECT COALESCE(SUM(monto), 0) FROM prestamos WHERE socio_id = s.id AND estado = 'Aprobado') as monto_prestamos,
-        (SELECT COALESCE(SUM(saldo_pendiente), 0) FROM prestamos WHERE socio_id = s.id AND estado = 'Aprobado') as deuda_total,
+        (SELECT COUNT(*) FROM prestamos WHERE id_socio = s.id AND estado IN ('aprobado', 'activo', 'desembolsado')) as prestamos_activos,
+        (SELECT COALESCE(SUM(monto_aprobado), 0) FROM prestamos WHERE id_socio = s.id AND estado IN ('aprobado', 'activo', 'desembolsado')) as monto_prestamos,
+        (SELECT COALESCE(SUM(saldo_pendiente), 0) FROM prestamos WHERE id_socio = s.id AND estado IN ('aprobado', 'activo', 'desembolsado')) as deuda_total,
         
         -- Pagos realizados
         (SELECT COUNT(*) 
          FROM pagos pg 
-         INNER JOIN prestamos pr ON pg.prestamo_id = pr.id 
-         WHERE pr.socio_id = s.id) as total_pagos,
-        (SELECT COALESCE(SUM(monto_pago), 0) 
+         INNER JOIN prestamos pr ON pg.id_prestamo = pr.id 
+         WHERE pr.id_socio = s.id) as total_pagos,
+        (SELECT COALESCE(SUM(pg.monto), 0) 
          FROM pagos pg 
-         INNER JOIN prestamos pr ON pg.prestamo_id = pr.id 
-         WHERE pr.socio_id = s.id) as total_pagado
+         INNER JOIN prestamos pr ON pg.id_prestamo = pr.id 
+         WHERE pr.id_socio = s.id) as total_pagado
       FROM socios s
       WHERE s.id = :socioId
     `, {
@@ -524,7 +524,7 @@ exports.getEstadoCuentaSocio = async (req, res) => {
         fecha_apertura,
         estado
       FROM cuentas
-      WHERE socio_id = :socioId
+      WHERE id_socio = :socioId
       ORDER BY fecha_apertura DESC
     `, {
       replacements: { socioId },
@@ -535,7 +535,7 @@ exports.getEstadoCuentaSocio = async (req, res) => {
     const prestamos = await sequelize.query(`
       SELECT 
         id,
-        monto,
+        monto_aprobado as monto,
         tasa_interes,
         plazo_meses,
         cuota_mensual,
@@ -544,7 +544,7 @@ exports.getEstadoCuentaSocio = async (req, res) => {
         fecha_aprobacion,
         estado
       FROM prestamos
-      WHERE socio_id = :socioId
+      WHERE id_socio = :socioId
       ORDER BY fecha_solicitud DESC
     `, {
       replacements: { socioId },
@@ -572,23 +572,23 @@ exports.getProyeccionPagos = async (req, res) => {
         p.id as prestamo_id,
         s.nombre,
         s.apellido,
-        s.identificacion,
+        s.identidad as identificacion,
         s.telefono,
-        p.monto,
+        p.monto_aprobado as monto,
         p.cuota_mensual,
         p.plazo_meses,
-        (SELECT COUNT(*) FROM pagos WHERE prestamo_id = p.id) as pagos_realizados,
-        (p.plazo_meses - (SELECT COUNT(*) FROM pagos WHERE prestamo_id = p.id)) as cuotas_pendientes,
+        (SELECT COUNT(*) FROM pagos WHERE id_prestamo = p.id) as pagos_realizados,
+        (p.plazo_meses - (SELECT COUNT(*) FROM pagos WHERE id_prestamo = p.id)) as cuotas_pendientes,
         DATE_ADD(p.fecha_aprobacion, 
-          INTERVAL ((SELECT COUNT(*) FROM pagos WHERE prestamo_id = p.id) + 1) MONTH) as fecha_proximo_pago,
+          INTERVAL ((SELECT COUNT(*) FROM pagos WHERE id_prestamo = p.id) + 1) MONTH) as fecha_proximo_pago,
         DATEDIFF(DATE_ADD(p.fecha_aprobacion, 
-          INTERVAL ((SELECT COUNT(*) FROM pagos WHERE prestamo_id = p.id) + 1) MONTH), CURDATE()) as dias_hasta_pago
+          INTERVAL ((SELECT COUNT(*) FROM pagos WHERE id_prestamo = p.id) + 1) MONTH), CURDATE()) as dias_hasta_pago
       FROM prestamos p
-      INNER JOIN socios s ON p.socio_id = s.id
-      WHERE p.estado = 'Aprobado'
-        AND (p.plazo_meses - (SELECT COUNT(*) FROM pagos WHERE prestamo_id = p.id)) > 0
+      INNER JOIN socios s ON p.id_socio = s.id
+      WHERE p.estado IN ('aprobado', 'activo', 'desembolsado')
+        AND (p.plazo_meses - (SELECT COUNT(*) FROM pagos WHERE id_prestamo = p.id)) > 0
         AND DATEDIFF(DATE_ADD(p.fecha_aprobacion, 
-          INTERVAL ((SELECT COUNT(*) FROM pagos WHERE prestamo_id = p.id) + 1) MONTH), CURDATE()) <= :dias
+          INTERVAL ((SELECT COUNT(*) FROM pagos WHERE id_prestamo = p.id) + 1) MONTH), CURDATE()) <= :dias
       ORDER BY fecha_proximo_pago ASC
     `, {
       replacements: { dias: parseInt(dias) },
@@ -614,7 +614,7 @@ exports.getComparativaMensual = async (req, res) => {
         SELECT 
           MONTH(fecha_pago) as mes,
           YEAR(fecha_pago) as anio,
-          SUM(monto_pago) as total
+          SUM(monto) as total
         FROM pagos
         WHERE YEAR(fecha_pago) IN (YEAR(CURDATE()), YEAR(CURDATE()) - 1)
         GROUP BY YEAR(fecha_pago), MONTH(fecha_pago)
@@ -636,36 +636,36 @@ exports.getResumenEjecutivo = async (req, res) => {
     const resultado = await sequelize.query(`
       SELECT 
         -- Socios
-        (SELECT COUNT(*) FROM socios WHERE estado = 'Activo') as socios_activos,
+        (SELECT COUNT(*) FROM socios WHERE estado = 'activo') as socios_activos,
         (SELECT COUNT(*) FROM socios WHERE DATE(fecha_ingreso) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)) as nuevos_socios_mes,
         
         -- Cuentas y Saldos
-        (SELECT COUNT(*) FROM cuentas WHERE estado = 'Activa') as cuentas_activas,
-        (SELECT COALESCE(SUM(saldo), 0) FROM cuentas WHERE estado = 'Activa') as saldo_total,
-        (SELECT COALESCE(AVG(saldo), 0) FROM cuentas WHERE estado = 'Activa') as saldo_promedio,
+        (SELECT COUNT(*) FROM cuentas WHERE estado = 'activa') as cuentas_activas,
+        (SELECT COALESCE(SUM(saldo), 0) FROM cuentas WHERE estado = 'activa') as saldo_total,
+        (SELECT COALESCE(AVG(saldo), 0) FROM cuentas WHERE estado = 'activa') as saldo_promedio,
         
         -- Préstamos
-        (SELECT COUNT(*) FROM prestamos WHERE estado = 'Aprobado') as prestamos_activos,
-        (SELECT COUNT(*) FROM prestamos WHERE estado = 'Pendiente') as prestamos_pendientes,
-        (SELECT COALESCE(SUM(monto), 0) FROM prestamos WHERE estado = 'Aprobado') as cartera_total,
-        (SELECT COALESCE(SUM(saldo_pendiente), 0) FROM prestamos WHERE estado = 'Aprobado') as cartera_vigente,
+        (SELECT COUNT(*) FROM prestamos WHERE estado IN ('aprobado', 'activo', 'desembolsado')) as prestamos_activos,
+        (SELECT COUNT(*) FROM prestamos WHERE estado IN ('solicitado', 'en_revision')) as prestamos_pendientes,
+        (SELECT COALESCE(SUM(monto_aprobado), 0) FROM prestamos WHERE estado IN ('aprobado', 'activo', 'desembolsado')) as cartera_total,
+        (SELECT COALESCE(SUM(saldo_pendiente), 0) FROM prestamos WHERE estado IN ('aprobado', 'activo', 'desembolsado')) as cartera_vigente,
         
         -- Mora
         (SELECT COUNT(*) 
          FROM prestamos p
-         WHERE p.estado = 'Aprobado'
+         WHERE p.estado IN ('aprobado', 'activo', 'desembolsado')
            AND DATEDIFF(CURDATE(), 
              DATE_ADD(p.fecha_aprobacion, 
-               INTERVAL ((SELECT COUNT(*) FROM pagos WHERE prestamo_id = p.id) + 1) MONTH)) > 0) as prestamos_mora,
+               INTERVAL ((SELECT COUNT(*) FROM pagos WHERE id_prestamo = p.id) + 1) MONTH)) > 0) as prestamos_mora,
         
         -- Transacciones del mes
-        (SELECT COUNT(*) FROM transacciones WHERE MONTH(fecha) = MONTH(CURDATE())) as transacciones_mes,
-        (SELECT COALESCE(SUM(monto), 0) FROM transacciones WHERE tipo = 'Deposito' AND MONTH(fecha) = MONTH(CURDATE())) as depositos_mes,
-        (SELECT COALESCE(SUM(monto), 0) FROM transacciones WHERE tipo = 'Retiro' AND MONTH(fecha) = MONTH(CURDATE())) as retiros_mes,
+        (SELECT COUNT(*) FROM transacciones WHERE MONTH(fecha_transaccion) = MONTH(CURDATE())) as transacciones_mes,
+        (SELECT COALESCE(SUM(monto), 0) FROM transacciones WHERE tipo = 'deposito' AND MONTH(fecha_transaccion) = MONTH(CURDATE())) as depositos_mes,
+        (SELECT COALESCE(SUM(monto), 0) FROM transacciones WHERE tipo = 'retiro' AND MONTH(fecha_transaccion) = MONTH(CURDATE())) as retiros_mes,
         
         -- Pagos del mes
         (SELECT COUNT(*) FROM pagos WHERE MONTH(fecha_pago) = MONTH(CURDATE())) as pagos_mes,
-        (SELECT COALESCE(SUM(monto_pago), 0) FROM pagos WHERE MONTH(fecha_pago) = MONTH(CURDATE())) as total_pagado_mes
+        (SELECT COALESCE(SUM(monto), 0) FROM pagos WHERE MONTH(fecha_pago) = MONTH(CURDATE())) as total_pagado_mes
     `, { type: QueryTypes.SELECT });
 
     res.json(resultado[0]);

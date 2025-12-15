@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pagos - COOP-SMART</title>
     <link rel="stylesheet" href="css/pagos.css">
+    <!-- Librerías para exportación -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -18,7 +22,7 @@
                 </div>
             </div>
             
-            <div class="header-search">
+            <div class="header-search" style="display:none;">
                 <input type="text" id="globalSearch" placeholder="Buscar por préstamo, socio, referencia..." class="search-input">
                 <span class="search-icon">🔍</span>
             </div>
@@ -99,9 +103,18 @@
 
         <!-- Filtros -->
         <div class="filters-card">
-            <div class="filters-header">
+            <div class="filters-header" style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
                 <h3>🔍 Filtros</h3>
-                <button class="btn-secondary" id="btnLimpiarFiltros">Limpiar</button>
+                <!-- Barra de búsqueda principal -->
+                <div class="search-group" style="min-width: 380px; flex: 0 1 480px;">
+                    <span class="search-group-icon">🔎</span>
+                    <input type="text" id="busquedaInput" class="search-input" placeholder="Buscar por socio, préstamo, referencia...">
+                    <div class="search-group-actions">
+                        <button type="button" class="btn-secondary" id="btnBuscar">Buscar</button>
+                        <button type="button" class="btn-secondary" id="btnLimpiarBusqueda">Limpiar</button>
+                    </div>
+                </div>
+                <button class="btn-secondary" id="btnLimpiarFiltros">Limpiar Filtros</button>
             </div>
             
             <div class="filters-grid">
@@ -171,11 +184,11 @@
             <div class="card">
                 <div class="card-header">
                     <h3>📋 Préstamos con Pagos Pendientes</h3>
-                    <div class="toolbar">
+                    <div class="toolbar" style="display: flex; gap: 0.5rem;">
                         <span class="results-count" id="resultsCountPrestamos">0 préstamos</span>
-                        <button class="btn-icon" id="btnExportarPrestamos" title="Exportar">
-                            📥 Exportar
-                        </button>
+                        <button class="btn-secondary" id="btnExportarPrestamosCSV" data-permiso="PAGOS_VER">📄 CSV</button>
+                        <button class="btn-secondary" id="btnExportarPrestamosExcel" data-permiso="PAGOS_VER">📊 Excel</button>
+                        <button class="btn-secondary" id="btnExportarPrestamosPDF" data-permiso="PAGOS_VER">📕 PDF</button>
                     </div>
                 </div>
                 
@@ -220,11 +233,11 @@
             <div class="card">
                 <div class="card-header">
                     <h3>📝 Historial de Pagos Realizados</h3>
-                    <div class="toolbar">
+                    <div class="toolbar" style="display: flex; gap: 0.5rem;">
                         <span class="results-count" id="resultsCountPagos">0 pagos</span>
-                        <button class="btn-icon" id="btnExportarPagos" title="Exportar">
-                            📥 Exportar
-                        </button>
+                        <button class="btn-secondary" id="btnExportarPagosCSV" data-permiso="PAGOS_VER">📄 CSV</button>
+                        <button class="btn-secondary" id="btnExportarPagosExcel" data-permiso="PAGOS_VER">📊 Excel</button>
+                        <button class="btn-secondary" id="btnExportarPagosPDF" data-permiso="PAGOS_VER">📕 PDF</button>
                     </div>
                 </div>
                 
@@ -517,6 +530,7 @@
         </div>
     </div>
 
+    <script src="js/utils.js"></script>
     <script src="js/pagos.js"></script>
 </body>
 </html>

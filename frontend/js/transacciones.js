@@ -11,6 +11,7 @@ const API_URL = (window.location.hostname === 'localhost' || window.location.pro
 let transacciones = [];
 let cuentas = [];
 let socios = [];
+let currentSearch = ''; // Búsqueda actual
 let filtros = {
     tipo: 'todos',
     periodo: 'hoy',
@@ -76,8 +77,30 @@ function initEventListeners() {
     // Cerrar sesión
     document.getElementById('logoutBtn').addEventListener('click', cerrarSesion);
     
-    // Búsqueda global
-    document.getElementById('globalSearch').addEventListener('input', handleGlobalSearch);
+    // Búsqueda en panel de filtros
+    const busquedaInput = document.getElementById('busquedaInput');
+    const btnBuscar = document.getElementById('btnBuscar');
+    const btnLimpiarBusqueda = document.getElementById('btnLimpiarBusqueda');
+    if (busquedaInput && btnBuscar && btnLimpiarBusqueda) {
+        btnBuscar.addEventListener('click', () => {
+            currentSearch = busquedaInput.value.trim();
+            paginaActual = 1;
+            renderizarTransacciones();
+        });
+        busquedaInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                currentSearch = busquedaInput.value.trim();
+                paginaActual = 1;
+                renderizarTransacciones();
+            }
+        });
+        btnLimpiarBusqueda.addEventListener('click', () => {
+            busquedaInput.value = '';
+            currentSearch = '';
+            paginaActual = 1;
+            renderizarTransacciones();
+        });
+    }
     
     // Filtros de tipo
     document.querySelectorAll('.filter-chip').forEach(chip => {
@@ -106,8 +129,14 @@ function initEventListeners() {
     
     // Botones principales
     document.getElementById('btnNuevaTransaccion').addEventListener('click', abrirModalNuevaTransaccion);
-    document.getElementById('btnExportarCSV').addEventListener('click', exportarCSV);
-    document.getElementById('btnExportarPDF').addEventListener('click', exportarPDF);
+    
+    // Exportaciones
+    const btnCSV = document.getElementById('btnExportarCSV');
+    const btnExcel = document.getElementById('btnExportarExcel');
+    const btnPDF = document.getElementById('btnExportarPDF');
+    if (btnCSV) btnCSV.addEventListener('click', exportarCSV);
+    if (btnExcel) btnExcel.addEventListener('click', exportarExcel);
+    if (btnPDF) btnPDF.addEventListener('click', exportarPDF);
     
     // Modal Nueva Transacción
     document.getElementById('btnCloseNueva').addEventListener('click', cerrarModalNuevaTransaccion);
@@ -791,17 +820,65 @@ function imprimirTransaccion(idTransaccion) {
 }
 
 // ============================================
-// EXPORTAR
+// EXPORTAR (CSV, EXCEL, PDF)
 // ============================================
 
+const COLUMNAS_TRANSACCIONES = [
+    { key: 'id', header: 'ID' },
+    { key: 'fecha_fmt', header: 'Fecha y Hora', tipo: 'fecha' },
+    { key: 'tipo_fmt', header: 'Tipo' },
+    { key: 'numero_cuenta', header: 'Cuenta' },
+    { key: 'titular', header: 'Titular' },
+    { key: 'monto_fmt', header: 'Monto', tipo: 'moneda' },
+    { key: 'saldo_despues_fmt', header: 'Saldo Después', tipo: 'moneda' },
+    { key: 'descripcion', header: 'Descripción' }
+];
+
+function prepararDatosExportacion() {
+    return transacciones.map(t => ({
+        id: t.id,
+        fecha_fmt: formatearFechaHora(t.fecha),
+        tipo_fmt: capitalizar(t.tipo),
+        numero_cuenta: obtenerNumeroCuenta(t.id_cuenta),
+        titular: obtenerTitularCuenta(t.id_cuenta),
+        monto: parseFloat(t.monto) || 0,
+        monto_fmt: formatearMoneda(t.monto),
+        saldo_despues_fmt: formatearMoneda(t.saldo_despues || 0),
+        descripcion: t.descripcion || ''
+    }));
+}
+
 function exportarCSV() {
-    const csv = generarCSV();
-    descargarArchivo(csv, 'transacciones.csv', 'text/csv');
-    mostrarExito('Transacciones exportadas a CSV');
+    const datos = prepararDatosExportacion();
+    if (window.COOP_UTILS) {
+        window.COOP_UTILS.exportarCSV(datos, 'transacciones_coop_smart', COLUMNAS_TRANSACCIONES);
+    } else {
+        // Fallback
+        const csv = generarCSV();
+        descargarArchivo(csv, 'transacciones.csv', 'text/csv');
+        mostrarExito('Transacciones exportadas a CSV');
+    }
+}
+
+function exportarExcel() {
+    const datos = prepararDatosExportacion();
+    if (window.COOP_UTILS) {
+        window.COOP_UTILS.exportarExcel(datos, 'transacciones_coop_smart', COLUMNAS_TRANSACCIONES, 'Transacciones');
+    } else {
+        mostrarError('La librería de Excel no está disponible');
+    }
 }
 
 function exportarPDF() {
-    mostrarExito('Función de exportar PDF en desarrollo');
+    const datos = prepararDatosExportacion();
+    if (window.COOP_UTILS) {
+        window.COOP_UTILS.exportarPDF(datos, 'transacciones_coop_smart', COLUMNAS_TRANSACCIONES, {
+            titulo: 'Historial de Transacciones - COOP-SMART',
+            orientacion: 'landscape'
+        });
+    } else {
+        mostrarError('La librería de PDF no está disponible');
+    }
 }
 
 function generarCSV() {

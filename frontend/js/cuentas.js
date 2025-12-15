@@ -12,6 +12,7 @@ let cuentas = [];
 let socios = [];
 let filtroActual = 'todas';
 let estadoActual = 'todas';
+let currentSearch = ''; // Búsqueda actual
 // Estado de paginación
 let currentPageCuentas = 1;
 const PAGE_SIZE_CUENTAS = 15;
@@ -68,8 +69,30 @@ function initEventListeners() {
     // Cerrar sesión
     document.getElementById('logoutBtn').addEventListener('click', cerrarSesion);
     
-    // Búsqueda global
-    document.getElementById('globalSearch').addEventListener('input', handleGlobalSearch);
+    // Búsqueda en panel de filtros (server-side)
+    const busquedaInput = document.getElementById('busquedaInput');
+    const btnBuscar = document.getElementById('btnBuscar');
+    const btnLimpiarBusqueda = document.getElementById('btnLimpiarBusqueda');
+    if (busquedaInput && btnBuscar && btnLimpiarBusqueda) {
+        btnBuscar.addEventListener('click', () => {
+            currentSearch = busquedaInput.value.trim();
+            currentPageCuentas = 1;
+            cargarCuentas();
+        });
+        busquedaInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                currentSearch = busquedaInput.value.trim();
+                currentPageCuentas = 1;
+                cargarCuentas();
+            }
+        });
+        btnLimpiarBusqueda.addEventListener('click', () => {
+            busquedaInput.value = '';
+            currentSearch = '';
+            currentPageCuentas = 1;
+            cargarCuentas();
+        });
+    }
     
     // Filtros
     document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -80,7 +103,14 @@ function initEventListeners() {
     
     // Botones principales
     document.getElementById('btnNuevaCuenta').addEventListener('click', abrirModalNuevaCuenta);
-    document.getElementById('btnExportar').addEventListener('click', exportarCuentas);
+    
+    // Exportaciones
+    const btnCSV = document.getElementById('btnExportarCSV');
+    const btnExcel = document.getElementById('btnExportarExcel');
+    const btnPDF = document.getElementById('btnExportarPDF');
+    if (btnCSV) btnCSV.addEventListener('click', exportarCSV);
+    if (btnExcel) btnExcel.addEventListener('click', exportarExcel);
+    if (btnPDF) btnPDF.addEventListener('click', exportarPDF);
     
     // Modal Nueva Cuenta
     document.getElementById('btnCloseNueva').addEventListener('click', cerrarModalNuevaCuenta);
@@ -908,15 +938,67 @@ async function toggleEstadoCuenta(idCuenta) {
 }
 
 // ============================================
-// EXPORTAR
+// EXPORTAR (CSV, EXCEL, PDF)
 // ============================================
 
-function exportarCuentas() {
-    const csv = generarCSV();
-    descargarCSV(csv, 'cuentas.csv');
-    mostrarExito('Cuentas exportadas exitosamente');
+// Columnas para exportación
+const COLUMNAS_EXPORTACION = [
+    { key: 'numero_cuenta', header: 'Número Cuenta' },
+    { key: 'titular', header: 'Titular' },
+    { key: 'tipo_cuenta_fmt', header: 'Tipo' },
+    { key: 'saldo_fmt', header: 'Saldo', tipo: 'moneda' },
+    { key: 'tasa_interes', header: 'Tasa Interés (%)' },
+    { key: 'fecha_apertura_fmt', header: 'Fecha Apertura', tipo: 'fecha' },
+    { key: 'estado_fmt', header: 'Estado' }
+];
+
+function prepararDatosExportacion() {
+    return cuentas.map(c => ({
+        numero_cuenta: c.numero_cuenta,
+        titular: obtenerNombreTitular(c.id_socio),
+        tipo_cuenta_fmt: formatearTipoCuenta(c.tipo_cuenta),
+        saldo: parseFloat(c.saldo) || 0,
+        saldo_fmt: formatearMoneda(c.saldo),
+        tasa_interes: c.tasa_interes,
+        fecha_apertura_fmt: formatearFecha(c.fecha_apertura),
+        estado_fmt: capitalizar(c.estado)
+    }));
 }
 
+function exportarCSV() {
+    const datos = prepararDatosExportacion();
+    if (window.COOP_UTILS) {
+        window.COOP_UTILS.exportarCSV(datos, 'cuentas_coop_smart', COLUMNAS_EXPORTACION);
+    } else {
+        // Fallback
+        const csv = generarCSV();
+        descargarCSVFallback(csv, 'cuentas.csv');
+        mostrarExito('Cuentas exportadas exitosamente');
+    }
+}
+
+function exportarExcel() {
+    const datos = prepararDatosExportacion();
+    if (window.COOP_UTILS) {
+        window.COOP_UTILS.exportarExcel(datos, 'cuentas_coop_smart', COLUMNAS_EXPORTACION, 'Cuentas');
+    } else {
+        mostrarError('La librería de Excel no está disponible');
+    }
+}
+
+function exportarPDF() {
+    const datos = prepararDatosExportacion();
+    if (window.COOP_UTILS) {
+        window.COOP_UTILS.exportarPDF(datos, 'cuentas_coop_smart', COLUMNAS_EXPORTACION, {
+            titulo: 'Listado de Cuentas - COOP-SMART',
+            orientacion: 'landscape'
+        });
+    } else {
+        mostrarError('La librería de PDF no está disponible');
+    }
+}
+
+// Fallback para CSV sin utils
 function generarCSV() {
     const headers = ['Número Cuenta', 'Titular', 'Tipo', 'Saldo', 'Tasa Interés', 'Fecha Apertura', 'Estado'];
     const rows = cuentas.map(c => [
@@ -932,7 +1014,7 @@ function generarCSV() {
     return [headers, ...rows].map(row => row.join(',')).join('\n');
 }
 
-function descargarCSV(csv, filename) {
+function descargarCSVFallback(csv, filename) {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);

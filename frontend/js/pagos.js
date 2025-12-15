@@ -11,6 +11,7 @@ const API_URL = (window.location.hostname === 'localhost' || window.location.pro
 let prestamos = [];
 let pagos = [];
 let socios = [];
+let currentSearch = ''; // Búsqueda actual
 let filtros = {
     estado: 'todos',
     periodo: 'mes',
@@ -29,15 +30,30 @@ const itemsPorPagina = 15;
 // INICIALIZACIÓN
 // ============================================
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     verificarAutenticacion();
     cargarUsuario();
     initEventListeners();
-    cargarDatos();
+    await cargarDatos();
     
     // Fecha actual por defecto
     const hoy = new Date().toISOString().split('T')[0];
     document.getElementById('fecha_pago').value = hoy;
+    
+    // Verificar si viene un préstamo desde la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const prestamoId = urlParams.get('prestamo');
+    if (prestamoId) {
+        // Abrir modal de registro con el préstamo pre-seleccionado
+        setTimeout(() => {
+            abrirModalRegistrarPago();
+            const selectPrestamo = document.getElementById('id_prestamo');
+            if (selectPrestamo) {
+                selectPrestamo.value = prestamoId;
+                mostrarInfoPrestamo();
+            }
+        }, 500);
+    }
     
     // Auto-refresh cada 60 segundos
     setInterval(() => {
@@ -79,8 +95,49 @@ function initEventListeners() {
     // Cerrar sesión
     document.getElementById('logoutBtn').addEventListener('click', cerrarSesion);
     
-    // Búsqueda global
-    document.getElementById('globalSearch').addEventListener('input', handleGlobalSearch);
+    // Búsqueda en panel de filtros
+    const busquedaInput = document.getElementById('busquedaInput');
+    const btnBuscar = document.getElementById('btnBuscar');
+    const btnLimpiarBusqueda = document.getElementById('btnLimpiarBusqueda');
+    if (busquedaInput && btnBuscar && btnLimpiarBusqueda) {
+        btnBuscar.addEventListener('click', () => {
+            currentSearch = busquedaInput.value.trim();
+            paginaActualPrestamos = 1;
+            paginaActualPagos = 1;
+            aplicarFiltros();
+        });
+        busquedaInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                currentSearch = busquedaInput.value.trim();
+                paginaActualPrestamos = 1;
+                paginaActualPagos = 1;
+                aplicarFiltros();
+            }
+        });
+        btnLimpiarBusqueda.addEventListener('click', () => {
+            busquedaInput.value = '';
+            currentSearch = '';
+            paginaActualPrestamos = 1;
+            paginaActualPagos = 1;
+            aplicarFiltros();
+        });
+    }
+    
+    // Exportaciones Préstamos
+    const btnPrestamosCSV = document.getElementById('btnExportarPrestamosCSV');
+    const btnPrestamosExcel = document.getElementById('btnExportarPrestamosExcel');
+    const btnPrestamosPDF = document.getElementById('btnExportarPrestamosPDF');
+    if (btnPrestamosCSV) btnPrestamosCSV.addEventListener('click', () => exportarPrestamos('csv'));
+    if (btnPrestamosExcel) btnPrestamosExcel.addEventListener('click', () => exportarPrestamos('excel'));
+    if (btnPrestamosPDF) btnPrestamosPDF.addEventListener('click', () => exportarPrestamos('pdf'));
+    
+    // Exportaciones Pagos
+    const btnPagosCSV = document.getElementById('btnExportarPagosCSV');
+    const btnPagosExcel = document.getElementById('btnExportarPagosExcel');
+    const btnPagosPDF = document.getElementById('btnExportarPagosPDF');
+    if (btnPagosCSV) btnPagosCSV.addEventListener('click', () => exportarHistorialPagos('csv'));
+    if (btnPagosExcel) btnPagosExcel.addEventListener('click', () => exportarHistorialPagos('excel'));
+    if (btnPagosPDF) btnPagosPDF.addEventListener('click', () => exportarHistorialPagos('pdf'));
     
     // Filtros
     document.querySelectorAll('.filter-chip').forEach(chip => {
@@ -104,10 +161,6 @@ function initEventListeners() {
     
     // Botón Registrar Pago
     document.getElementById('btnRegistrarPago').addEventListener('click', abrirModalRegistrarPago);
-    
-    // Exportar
-    document.getElementById('btnExportarPrestamos').addEventListener('click', exportarPrestamos);
-    document.getElementById('btnExportarPagos').addEventListener('click', exportarPagos);
     
     // Modal Registrar Pago
     document.getElementById('btnCloseRegistrar').addEventListener('click', cerrarModalRegistrarPago);
@@ -893,18 +946,6 @@ async function handleRegistrarPago(e) {
         mostrarError(error.message || 'Error al registrar el pago');
     }
 }
-        cargarDatos();
-        
-        // Mostrar recibo
-        setTimeout(() => {
-            verRecibo(pagoCreado.id);
-        }, 500);
-        
-    } catch (error) {
-        console.error('Error:', error);
-        mostrarError(error.message || 'Error al registrar el pago');
-    }
-}
 
 // ============================================
 // FUNCIONES AUXILIARES DE PAGO
@@ -1205,19 +1246,115 @@ function calcularInteresCuota(prestamo, numeroCuota) {
 }
 
 // ============================================
-// EXPORTAR
+// EXPORTAR (CSV, EXCEL, PDF)
 // ============================================
 
-function exportarPrestamos() {
-    const csv = generarCSVPrestamos();
-    descargarArchivo(csv, 'prestamos_activos.csv', 'text/csv');
-    mostrarExito('Préstamos exportados a CSV');
+const COLUMNAS_PRESTAMOS = [
+    { key: 'id', header: 'ID' },
+    { key: 'socio', header: 'Socio' },
+    { key: 'monto_fmt', header: 'Monto', tipo: 'moneda' },
+    { key: 'saldo_pendiente_fmt', header: 'Saldo Pendiente', tipo: 'moneda' },
+    { key: 'cuota_fmt', header: 'Cuota', tipo: 'moneda' },
+    { key: 'proximo_pago', header: 'Próximo Pago', tipo: 'fecha' },
+    { key: 'estado_texto', header: 'Estado' }
+];
+
+const COLUMNAS_PAGOS = [
+    { key: 'id', header: 'ID' },
+    { key: 'fecha_fmt', header: 'Fecha', tipo: 'fecha' },
+    { key: 'id_prestamo', header: 'Préstamo' },
+    { key: 'socio', header: 'Socio' },
+    { key: 'numero_cuota', header: 'Cuota #' },
+    { key: 'monto_pagado_fmt', header: 'Monto', tipo: 'moneda' },
+    { key: 'monto_capital_fmt', header: 'Capital', tipo: 'moneda' },
+    { key: 'monto_interes_fmt', header: 'Interés', tipo: 'moneda' },
+    { key: 'metodo_pago', header: 'Método' }
+];
+
+function prepararDatosPrestamos() {
+    return prestamos
+        .filter(p => p.estado === 'aprobado')
+        .map(p => ({
+            id: p.id,
+            socio: obtenerNombreSocio(p.id_socio),
+            monto: parseFloat(p.monto) || 0,
+            monto_fmt: formatearMoneda(p.monto),
+            saldo_pendiente: calcularSaldoPendiente(p),
+            saldo_pendiente_fmt: formatearMoneda(calcularSaldoPendiente(p)),
+            cuota: parseFloat(p.cuota_mensual) || 0,
+            cuota_fmt: formatearMoneda(p.cuota_mensual),
+            proximo_pago: calcularProximoPago(p) ? formatearFecha(calcularProximoPago(p)) : '-',
+            estado_texto: obtenerTextoEstado(calcularEstadoPrestamo(p))
+        }));
 }
 
+function prepararDatosPagos() {
+    return pagos.map(p => {
+        const prestamo = prestamos.find(pr => pr.id === p.id_prestamo);
+        return {
+            id: p.id,
+            fecha_fmt: formatearFechaHora(p.fecha_pago),
+            id_prestamo: p.id_prestamo,
+            socio: prestamo ? obtenerNombreSocio(prestamo.id_socio) : 'N/A',
+            numero_cuota: p.numero_cuota,
+            monto_pagado: parseFloat(p.monto_pagado) || 0,
+            monto_pagado_fmt: formatearMoneda(p.monto_pagado),
+            monto_capital: parseFloat(p.monto_capital) || 0,
+            monto_capital_fmt: formatearMoneda(p.monto_capital || 0),
+            monto_interes: parseFloat(p.monto_interes) || 0,
+            monto_interes_fmt: formatearMoneda(p.monto_interes || 0),
+            metodo_pago: p.metodo_pago || 'efectivo'
+        };
+    });
+}
+
+function exportarPrestamos(formato = 'csv') {
+    const datos = prepararDatosPrestamos();
+    if (!window.COOP_UTILS) {
+        mostrarError('Las utilidades de exportación no están disponibles');
+        return;
+    }
+    switch (formato) {
+        case 'csv':
+            window.COOP_UTILS.exportarCSV(datos, 'prestamos_activos', COLUMNAS_PRESTAMOS);
+            break;
+        case 'excel':
+            window.COOP_UTILS.exportarExcel(datos, 'prestamos_activos', COLUMNAS_PRESTAMOS, 'Préstamos Activos');
+            break;
+        case 'pdf':
+            window.COOP_UTILS.exportarPDF(datos, 'prestamos_activos', COLUMNAS_PRESTAMOS, {
+                titulo: 'Préstamos con Pagos Pendientes - COOP-SMART',
+                orientacion: 'landscape'
+            });
+            break;
+    }
+}
+
+function exportarHistorialPagos(formato = 'csv') {
+    const datos = prepararDatosPagos();
+    if (!window.COOP_UTILS) {
+        mostrarError('Las utilidades de exportación no están disponibles');
+        return;
+    }
+    switch (formato) {
+        case 'csv':
+            window.COOP_UTILS.exportarCSV(datos, 'historial_pagos', COLUMNAS_PAGOS);
+            break;
+        case 'excel':
+            window.COOP_UTILS.exportarExcel(datos, 'historial_pagos', COLUMNAS_PAGOS, 'Historial Pagos');
+            break;
+        case 'pdf':
+            window.COOP_UTILS.exportarPDF(datos, 'historial_pagos', COLUMNAS_PAGOS, {
+                titulo: 'Historial de Pagos Realizados - COOP-SMART',
+                orientacion: 'landscape'
+            });
+            break;
+    }
+}
+
+// Mantener compatibilidad con exportarPagos (alias)
 function exportarPagos() {
-    const csv = generarCSVPagos();
-    descargarArchivo(csv, 'historial_pagos.csv', 'text/csv');
-    mostrarExito('Pagos exportados a CSV');
+    exportarHistorialPagos('csv');
 }
 
 function generarCSVPrestamos() {

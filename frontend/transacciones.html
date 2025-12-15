@@ -6,6 +6,10 @@
     <title>Transacciones - COOP-SMART</title>
     <link rel="stylesheet" href="css/pagos.css">
     <link rel="stylesheet" href="css/transacciones.css">
+    <!-- Librerías para exportación -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -19,7 +23,7 @@
                 </div>
             </div>
             
-            <div class="header-search">
+            <div class="header-search" style="display:none;">
                 <input type="text" id="globalSearch" placeholder="Buscar por préstamo, socio, referencia..." class="search-input">
                 <span class="search-icon">�</span>
             </div>
@@ -100,8 +104,17 @@
 
         <!-- Filters Section -->
         <div class="card">
-            <div class="card-header">
-                <h3>🔍 Filtros</h3>
+            <div class="card-header" style="display:flex; align-items:center; justify-content:space-between; gap:1rem;">
+                <h3 style="margin:0;">🔍 Filtros</h3>
+                <!-- Barra de búsqueda principal -->
+                <div class="search-group" style="min-width: 420px; flex: 0 1 520px;">
+                    <span class="search-group-icon">🔎</span>
+                    <input type="text" id="busquedaInput" class="search-input" placeholder="Buscar por cuenta, titular, descripción...">
+                    <div class="search-group-actions">
+                        <button type="button" class="btn-secondary" id="btnBuscar">Buscar</button>
+                        <button type="button" class="btn-secondary" id="btnLimpiarBusqueda">Limpiar</button>
+                    </div>
+                </div>
             </div>
             <div class="filters-card">
                 <h3 class="filters-title">Filtros</h3>
@@ -181,13 +194,10 @@
         <div class="card" style="margin-top: 1.5rem;">
             <div class="card-header">
                 <h3>📋 Historial de Transacciones</h3>
-                <div class="toolbar">
-                    <button class="btn-secondary" id="btnExportarCSV">
-                        📊 CSV
-                    </button>
-                    <button class="btn-secondary" id="btnExportarPDF">
-                        📄 PDF
-                    </button>
+                <div class="toolbar" style="display: flex; gap: 0.5rem;">
+                    <button class="btn-secondary" id="btnExportarCSV" data-permiso="TRANSACCIONES_VER">📄 CSV</button>
+                    <button class="btn-secondary" id="btnExportarExcel" data-permiso="TRANSACCIONES_VER">📊 Excel</button>
+                    <button class="btn-secondary" id="btnExportarPDF" data-permiso="TRANSACCIONES_VER">📕 PDF</button>
                 </div>
             </div>
             <div class="table-container">
@@ -370,6 +380,7 @@
         </div>
     </div>
 
+    <script src="js/utils.js"></script>
     <script src="js/transacciones.js"></script>
 </body>
 </html>

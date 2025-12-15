@@ -14,6 +14,7 @@ let cuentas = [];
 let pagos = [];
 let filtroActual = 'todos';
 let prestamoActual = null;
+let currentSearch = ''; // Búsqueda actual
 // Paginación
 let currentPagePrestamos = 1;
 const PAGE_SIZE_PRESTAMOS = 15;
@@ -69,8 +70,38 @@ function initEventListeners() {
     // Cerrar sesión
     document.getElementById('logoutBtn').addEventListener('click', cerrarSesion);
     
-    // Búsqueda global
-    document.getElementById('globalSearch').addEventListener('input', handleGlobalSearch);
+    // Búsqueda en panel de filtros
+    const busquedaInput = document.getElementById('busquedaInput');
+    const btnBuscar = document.getElementById('btnBuscar');
+    const btnLimpiarBusqueda = document.getElementById('btnLimpiarBusqueda');
+    if (busquedaInput && btnBuscar && btnLimpiarBusqueda) {
+        btnBuscar.addEventListener('click', () => {
+            currentSearch = busquedaInput.value.trim();
+            currentPagePrestamos = 1;
+            renderizarPrestamos();
+        });
+        busquedaInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                currentSearch = busquedaInput.value.trim();
+                currentPagePrestamos = 1;
+                renderizarPrestamos();
+            }
+        });
+        btnLimpiarBusqueda.addEventListener('click', () => {
+            busquedaInput.value = '';
+            currentSearch = '';
+            currentPagePrestamos = 1;
+            renderizarPrestamos();
+        });
+    }
+    
+    // Exportaciones
+    const btnCSV = document.getElementById('btnExportarCSV');
+    const btnExcel = document.getElementById('btnExportarExcel');
+    const btnPDF = document.getElementById('btnExportarPDF');
+    if (btnCSV) btnCSV.addEventListener('click', exportarCSV);
+    if (btnExcel) btnExcel.addEventListener('click', exportarExcel);
+    if (btnPDF) btnPDF.addEventListener('click', exportarPDF);
     
     // Filtros
     document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -913,8 +944,8 @@ function registrarPago(idPrestamo) {
     const prestamo = prestamos.find(p => p.id === idPrestamo);
     if (!prestamo) return;
     
-    // Por ahora mostrar alerta
-    mostrarExito('Función de registro de pago en desarrollo.\nDirigirse al módulo de Pagos.');
+    // Redirigir al módulo de pagos con el ID del préstamo
+    window.location.href = `pagos.html?prestamo=${idPrestamo}`;
 }
 
 // ============================================
@@ -1015,6 +1046,67 @@ function formatearFechaHora(fecha) {
 function capitalizar(str) {
     if (!str) return '';
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+// ============================================
+// EXPORTAR (CSV, EXCEL, PDF)
+// ============================================
+
+const COLUMNAS_PRESTAMOS = [
+    { key: 'id', header: 'ID' },
+    { key: 'solicitante', header: 'Solicitante' },
+    { key: 'tipo_prestamo_fmt', header: 'Tipo' },
+    { key: 'monto_fmt', header: 'Monto', tipo: 'moneda' },
+    { key: 'tasa_interes', header: 'Tasa Interés (%)' },
+    { key: 'plazo_meses', header: 'Plazo (Meses)' },
+    { key: 'cuota_mensual_fmt', header: 'Cuota Mensual', tipo: 'moneda' },
+    { key: 'estado_fmt', header: 'Estado' },
+    { key: 'fecha_solicitud_fmt', header: 'Fecha Solicitud', tipo: 'fecha' }
+];
+
+function prepararDatosExportacion() {
+    return prestamos.map(p => ({
+        id: p.id,
+        solicitante: obtenerNombreSocio(p.id_socio),
+        tipo_prestamo_fmt: capitalizar(p.tipo_prestamo || 'personal'),
+        monto: parseFloat(p.monto) || 0,
+        monto_fmt: formatearMoneda(p.monto),
+        tasa_interes: p.tasa_interes,
+        plazo_meses: p.plazo_meses,
+        cuota_mensual_fmt: formatearMoneda(p.cuota_mensual),
+        estado_fmt: capitalizar(p.estado),
+        fecha_solicitud_fmt: formatearFecha(p.fecha_solicitud)
+    }));
+}
+
+function exportarCSV() {
+    const datos = prepararDatosExportacion();
+    if (window.COOP_UTILS) {
+        window.COOP_UTILS.exportarCSV(datos, 'prestamos_coop_smart', COLUMNAS_PRESTAMOS);
+    } else {
+        mostrarError('Error al exportar CSV');
+    }
+}
+
+function exportarExcel() {
+    const datos = prepararDatosExportacion();
+    if (window.COOP_UTILS) {
+        window.COOP_UTILS.exportarExcel(datos, 'prestamos_coop_smart', COLUMNAS_PRESTAMOS, 'Préstamos');
+    } else {
+        mostrarError('La librería de Excel no está disponible');
+    }
+}
+
+function exportarPDF() {
+    const datos = prepararDatosExportacion();
+    if (window.COOP_UTILS) {
+        window.COOP_UTILS.exportarPDF(datos, 'prestamos_coop_smart', COLUMNAS_PRESTAMOS, {
+            titulo: 'Listado de Préstamos - COOP-SMART',
+            orientacion: 'landscape'
+        });
+    } else {
+        mostrarError('La librería de PDF no está disponible');
+    }
 }
 
 function showLoading(show) {

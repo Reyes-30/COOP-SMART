@@ -6,6 +6,10 @@
     <title>Socios y Clientes - COOP-SMART</title>
     <link rel="stylesheet" href="css/pagos.css">
     <link rel="stylesheet" href="css/socios.css">
+    <!-- Librerías para exportación -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -146,10 +150,10 @@
         <div class="card">
             <div class="card-header">
                 <h3>📋 Listado de Socios y Clientes</h3>
-                <div class="toolbar" style="margin: 0; padding: 0; box-shadow: none; background: none;">
-                    <button class="btn-secondary" id="btnExportar">
-                        📥 Exportar
-                    </button>
+                <div class="toolbar" style="display: flex; gap: 0.5rem; margin: 0; padding: 0; box-shadow: none; background: none;">
+                    <button class="btn-secondary" id="btnExportarCSV" data-permiso="SOCIOS_VER">📄 CSV</button>
+                    <button class="btn-secondary" id="btnExportarExcel" data-permiso="SOCIOS_VER">📊 Excel</button>
+                    <button class="btn-secondary" id="btnExportarPDF" data-permiso="SOCIOS_VER">📕 PDF</button>
                 </div>
             </div>
 
@@ -438,6 +442,7 @@
         </div>
     </div>
 
+    <script src="js/utils.js"></script>
     <script src="js/socios.js"></script>
 </body>
 </html>

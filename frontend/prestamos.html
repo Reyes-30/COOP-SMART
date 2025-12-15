@@ -6,6 +6,10 @@
     <title>Préstamos - COOP-SMART</title>
     <link rel="stylesheet" href="css/pagos.css">
     <link rel="stylesheet" href="css/prestamos.css">
+    <!-- Librerías para exportación -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -19,7 +23,7 @@
                 </div>
             </div>
             
-            <div class="header-search">
+            <div class="header-search" style="display:none;">
                 <input type="text" id="globalSearch" placeholder="Buscar por préstamo, socio, referencia..." class="search-input">
                 <span class="search-icon">�</span>
             </div>
@@ -99,30 +103,54 @@
         </div>
 
         <!-- Filters and Actions -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header" style="display:flex; align-items:center; justify-content:space-between; gap:1rem;">
+                <h3 style="margin:0;">🔍 Filtros de Búsqueda</h3>
+                <!-- Barra de búsqueda principal -->
+                <div class="search-group" style="min-width: 420px; flex: 0 1 520px;">
+                    <span class="search-group-icon">🔎</span>
+                    <input type="text" id="busquedaInput" class="search-input" placeholder="Buscar por ID, solicitante, monto...">
+                    <div class="search-group-actions">
+                        <button type="button" class="btn-secondary" id="btnBuscar">Buscar</button>
+                        <button type="button" class="btn-secondary" id="btnLimpiarBusqueda">Limpiar</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 1.5rem;">
+                <div style="display: flex; gap: 2rem; flex-wrap: wrap; align-items: flex-end;">
+                    <div class="filter-group">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #4B5563;">Estado</label>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button class="filter-btn active" data-filter="todos">
+                                Todos <span class="filter-count" id="countTodos">0</span>
+                            </button>
+                            <button class="filter-btn" data-filter="pendiente">
+                                ⏳ Pendientes <span class="filter-count" id="countPendiente">0</span>
+                            </button>
+                            <button class="filter-btn" data-filter="aprobado">
+                                ✅ Aprobados <span class="filter-count" id="countAprobado">0</span>
+                            </button>
+                            <button class="filter-btn" data-filter="rechazado">
+                                ❌ Rechazados <span class="filter-count" id="countRechazado">0</span>
+                            </button>
+                            <button class="filter-btn" data-filter="pagado">
+                                💚 Pagados <span class="filter-count" id="countPagado">0</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Section -->
         <div class="card">
             <div class="card-header">
                 <h3>📋 Listado de Préstamos</h3>
-                <div class="toolbar">
-                    <div class="filter-group">
-                        <button class="filter-btn active" data-filter="todos">
-                            Todos <span class="filter-count" id="countTodos">0</span>
-                        </button>
-                        <button class="filter-btn" data-filter="pendiente">
-                            ⏳ Pendientes <span class="filter-count" id="countPendiente">0</span>
-                        </button>
-                        <button class="filter-btn" data-filter="aprobado">
-                            ✅ Aprobados <span class="filter-count" id="countAprobado">0</span>
-                        </button>
-                        <button class="filter-btn" data-filter="rechazado">
-                            ❌ Rechazados <span class="filter-count" id="countRechazado">0</span>
-                        </button>
-                        <button class="filter-btn" data-filter="pagado">
-                            💚 Pagados <span class="filter-count" id="countPagado">0</span>
-                        </button>
-                    </div>
-                    <button class="btn-secondary" id="btnCalculadora">
-                        🧮 Calculadora
-                    </button>
+                <div class="toolbar" style="display: flex; gap: 0.5rem;">
+                    <button class="btn-secondary" id="btnCalculadora">🧮 Calculadora</button>
+                    <button class="btn-secondary" id="btnExportarCSV" data-permiso="PRESTAMOS_VER">📄 CSV</button>
+                    <button class="btn-secondary" id="btnExportarExcel" data-permiso="PRESTAMOS_VER">📊 Excel</button>
+                    <button class="btn-secondary" id="btnExportarPDF" data-permiso="PRESTAMOS_VER">📕 PDF</button>
                 </div>
             </div>
 
@@ -437,6 +465,7 @@
         </div>
     </div>
 
+    <script src="js/utils.js"></script>
     <script src="js/prestamos.js"></script>
 </body>
 </html>

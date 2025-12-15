@@ -466,42 +466,193 @@ function showNotification(message, type = 'info') {
 }
 
 // ===================================
-// Gráficos (Placeholder)
+// Gráficos con Chart.js
 // ===================================
+let chartMovimientos = null;
+let chartCuentas = null;
+
 function initializeCharts() {
-    // Placeholder para los gráficos
-    const monthlyChart = document.getElementById('monthlyChart');
-    const accountsChart = document.getElementById('accountsChart');
+    crearGraficoMovimientos();
+    crearGraficoCuentas();
+}
+
+async function crearGraficoMovimientos() {
+    const canvas = document.getElementById('chartMovimientos');
+    if (!canvas || typeof Chart === 'undefined') return;
     
-    if (monthlyChart) {
-        monthlyChart.getContext('2d');
-        drawPlaceholderChart(monthlyChart, 'Gráfico de movimientos mensuales');
+    // Destruir gráfico anterior si existe
+    if (chartMovimientos) {
+        chartMovimientos.destroy();
     }
     
-    if (accountsChart) {
-        accountsChart.getContext('2d');
-        drawPlaceholderChart(accountsChart, 'Gráfico de distribución de cuentas');
+    try {
+        const token = localStorage.getItem('token');
+        
+        // Cargar transacciones para obtener datos de movimientos
+        const response = await fetch(`${API_URL}/api/transacciones`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const transacciones = response.ok ? await response.json() : [];
+        
+        // Procesar datos por mes
+        const datosPorMes = procesarMovimientosMensuales(transacciones);
+        
+        const ctx = canvas.getContext('2d');
+        chartMovimientos = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: datosPorMes.labels,
+                datasets: [
+                    {
+                        label: 'Depósitos',
+                        data: datosPorMes.depositos,
+                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                        borderColor: 'rgb(16, 185, 129)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Retiros',
+                        data: datosPorMes.retiros,
+                        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                        borderColor: 'rgb(239, 68, 68)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'L. ' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error creando gráfico de movimientos:', error);
     }
 }
 
-function drawPlaceholderChart(canvas, text) {
-    const ctx = canvas.getContext('2d');
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight || 300;
+function procesarMovimientosMensuales(transacciones) {
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const anioActual = new Date().getFullYear();
+    const mesActual = new Date().getMonth();
     
-    // Fondo
-    ctx.fillStyle = '#F9FAFB';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Últimos 6 meses
+    const labels = [];
+    const depositos = [];
+    const retiros = [];
     
-    // Texto
-    ctx.fillStyle = '#9CA3AF';
-    ctx.font = '16px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('📊', canvas.width / 2, canvas.height / 2 - 20);
-    ctx.fillText(text, canvas.width / 2, canvas.height / 2 + 20);
-    ctx.font = '14px Inter, sans-serif';
-    ctx.fillText('(Se implementará con Chart.js)', canvas.width / 2, canvas.height / 2 + 45);
+    for (let i = 5; i >= 0; i--) {
+        let mes = mesActual - i;
+        let anio = anioActual;
+        if (mes < 0) {
+            mes += 12;
+            anio -= 1;
+        }
+        labels.push(meses[mes] + ' ' + anio);
+        
+        // Filtrar transacciones del mes
+        const transDelMes = transacciones.filter(t => {
+            const fecha = new Date(t.fecha);
+            return fecha.getMonth() === mes && fecha.getFullYear() === anio;
+        });
+        
+        const totalDepositos = transDelMes
+            .filter(t => t.tipo === 'deposito')
+            .reduce((sum, t) => sum + parseFloat(t.monto || 0), 0);
+        
+        const totalRetiros = transDelMes
+            .filter(t => t.tipo === 'retiro')
+            .reduce((sum, t) => sum + parseFloat(t.monto || 0), 0);
+        
+        depositos.push(totalDepositos);
+        retiros.push(totalRetiros);
+    }
+    
+    return { labels, depositos, retiros };
+}
+
+async function crearGraficoCuentas() {
+    const canvas = document.getElementById('chartCuentas');
+    if (!canvas || typeof Chart === 'undefined') return;
+    
+    // Destruir gráfico anterior si existe
+    if (chartCuentas) {
+        chartCuentas.destroy();
+    }
+    
+    try {
+        const token = localStorage.getItem('token');
+        
+        // Cargar cuentas
+        const response = await fetch(`${API_URL}/api/cuentas`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const data = response.ok ? await response.json() : [];
+        const cuentas = Array.isArray(data) ? data : (data.cuentas || []);
+        
+        // Contar por tipo
+        const ahorro = cuentas.filter(c => c.tipo_cuenta === 'ahorro').length;
+        const corriente = cuentas.filter(c => c.tipo_cuenta === 'corriente').length;
+        const plazoFijo = cuentas.filter(c => c.tipo_cuenta === 'plazo_fijo').length;
+        
+        const ctx = canvas.getContext('2d');
+        chartCuentas = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Ahorro', 'Corriente', 'Plazo Fijo'],
+                datasets: [{
+                    data: [ahorro, corriente, plazoFijo],
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.8)',
+                        'rgba(168, 85, 247, 0.8)',
+                        'rgba(249, 115, 22, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgb(59, 130, 246)',
+                        'rgb(168, 85, 247)',
+                        'rgb(249, 115, 22)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    },
+                    title: {
+                        display: false
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error creando gráfico de cuentas:', error);
+    }
 }
 
 // ===================================
