@@ -9,11 +9,17 @@ const API_URL = (window.location.hostname === 'localhost' || window.location.pro
 // Estado Global
 // ===================================
 let userData = null;
+let socios = [];
+let cuentas = [];
 let dashboardData = {
     totalSocios: 0,
+    sociosActivos: 0,
     saldoTotal: 0,
+    totalCuentas: 0,
     prestamosActivos: 0,
+    montoPrestamos: 0,
     transaccionesHoy: 0,
+    montoMovidoHoy: 0,
     transacciones: []
 };
 
@@ -126,17 +132,18 @@ function toggleMobileSidebar() {
 
 function setupQuickActions() {
     const actionButtons = document.querySelectorAll('.action-btn');
+    const actions = [
+        'socios.html',
+        'cuentas.html',
+        'prestamos.html',
+        'transacciones.html'
+    ];
+    
     actionButtons.forEach((btn, index) => {
         btn.addEventListener('click', () => {
-            const actions = [
-                'socios.html',
-                'cuentas.html',
-                'prestamos.html',
-                'transacciones.html'
-            ];
-            // Por ahora solo mostramos alerta, luego redirigiremos
-            showNotification('Función en desarrollo', 'info');
-            // window.location.href = actions[index];
+            if (actions[index]) {
+                window.location.href = actions[index];
+            }
         });
     });
 }
@@ -162,80 +169,87 @@ async function loadKPIData() {
     try {
         // Cargar total de socios
         const sociosResponse = await fetch(`${API_URL}/api/socios`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         
         if (sociosResponse.ok) {
             const sociosData = await sociosResponse.json();
-            // Manejar respuesta paginada o array directo
-            const socios = Array.isArray(sociosData) ? sociosData : (sociosData.socios || []);
+            socios = Array.isArray(sociosData) ? sociosData : (sociosData.socios || []);
             dashboardData.totalSocios = socios.length;
+            dashboardData.sociosActivos = socios.filter(s => s.estado === 'activo').length;
             updateKPI('totalSocios', dashboardData.totalSocios);
+            updateSubKPI('countSocios', `${dashboardData.sociosActivos} activos`);
         }
         
         // Cargar cuentas y calcular saldo total
         const cuentasResponse = await fetch(`${API_URL}/api/cuentas`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         
         if (cuentasResponse.ok) {
             const cuentasData = await cuentasResponse.json();
-            // Manejar respuesta paginada o array directo
-            const cuentas = Array.isArray(cuentasData) ? cuentasData : (cuentasData.cuentas || []);
-            dashboardData.saldoTotal = cuentas.reduce((sum, cuenta) => sum + parseFloat(cuenta.saldo || 0), 0);
+            cuentas = Array.isArray(cuentasData) ? cuentasData : (cuentasData.cuentas || []);
+            const cuentasActivas = cuentas.filter(c => c.estado === 'activa');
+            dashboardData.totalCuentas = cuentasActivas.length;
+            dashboardData.saldoTotal = cuentasActivas.reduce((sum, cuenta) => sum + parseFloat(cuenta.saldo || 0), 0);
             updateKPI('saldoTotal', formatCurrency(dashboardData.saldoTotal));
+            updateSubKPI('countCuentas', `${dashboardData.totalCuentas} cuentas`);
         }
         
         // Cargar préstamos activos
         const prestamosResponse = await fetch(`${API_URL}/api/prestamos`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         
         if (prestamosResponse.ok) {
             const prestamos = await prestamosResponse.json();
-            dashboardData.prestamosActivos = prestamos.filter(p => p.estado === 'activo').length;
+            const prestamosActivos = prestamos.filter(p => ['activo', 'aprobado', 'desembolsado'].includes(p.estado));
+            dashboardData.prestamosActivos = prestamosActivos.length;
+            dashboardData.montoPrestamos = prestamosActivos.reduce((sum, p) => sum + parseFloat(p.monto_aprobado || p.monto_solicitado || 0), 0);
             updateKPI('prestamosActivos', dashboardData.prestamosActivos);
+            updateSubKPI('montoTotal', formatCurrency(dashboardData.montoPrestamos) + ' total');
         }
         
         // Cargar transacciones de hoy
         const transaccionesResponse = await fetch(`${API_URL}/api/transacciones`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         
         if (transaccionesResponse.ok) {
             const transacciones = await transaccionesResponse.json();
             const hoy = new Date().toISOString().split('T')[0];
-            dashboardData.transaccionesHoy = transacciones.filter(t => {
+            
+            const transaccionesHoy = transacciones.filter(t => {
                 try {
-                    const fechaTransaccion = new Date(t.fecha);
-                    // Validar que la fecha es válida
-                    if (isNaN(fechaTransaccion.getTime())) {
-                        return false;
-                    }
+                    const fecha = t.fecha_transaccion || t.createdAt;
+                    if (!fecha) return false;
+                    const fechaTransaccion = new Date(fecha);
+                    if (isNaN(fechaTransaccion.getTime())) return false;
                     return fechaTransaccion.toISOString().split('T')[0] === hoy;
                 } catch (error) {
-                    console.warn('Fecha inválida en transacción:', t);
                     return false;
                 }
-            }).length;
+            });
+            
+            dashboardData.transaccionesHoy = transaccionesHoy.length;
+            dashboardData.montoMovidoHoy = transaccionesHoy.reduce((sum, t) => sum + parseFloat(t.monto || 0), 0);
             updateKPI('transaccionesHoy', dashboardData.transaccionesHoy);
+            updateSubKPI('montoHoy', formatCurrency(dashboardData.montoMovidoHoy) + ' movido');
         }
         
     } catch (error) {
         console.error('Error cargando KPIs:', error);
-        // Mostrar datos de ejemplo en caso de error
         updateKPI('totalSocios', '0');
-        updateKPI('saldoTotal', '$0.00');
+        updateKPI('saldoTotal', formatCurrency(0));
         updateKPI('prestamosActivos', '0');
         updateKPI('transaccionesHoy', '0');
+    }
+}
+
+function updateSubKPI(id, value) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.textContent = value;
     }
 }
 
@@ -254,9 +268,13 @@ async function loadTransactions() {
             const transacciones = await response.json();
             dashboardData.transacciones = transacciones;
             
-            // Mostrar últimas 10 transacciones
+            // Mostrar últimas 10 transacciones (ordenar por fecha_transaccion o createdAt)
             const recentTransactions = transacciones
-                .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+                .sort((a, b) => {
+                    const fechaA = new Date(a.fecha_transaccion || a.createdAt || 0);
+                    const fechaB = new Date(b.fecha_transaccion || b.createdAt || 0);
+                    return fechaB - fechaA;
+                })
                 .slice(0, 10);
             
             displayTransactions(recentTransactions);
@@ -285,7 +303,6 @@ async function loadTransactions() {
 function displayTransactions(transacciones) {
     const tbody = document.getElementById('transaccionesTableBody');
     
-    // Validar que el elemento existe
     if (!tbody) {
         console.warn('Elemento transaccionesTableBody no encontrado en el DOM');
         return;
@@ -304,27 +321,45 @@ function displayTransactions(transacciones) {
     }
     
     tbody.innerHTML = transacciones.map(t => {
-        const fecha = new Date(t.fecha).toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
+        // Usar fecha correcta del modelo
+        const fechaStr = t.fecha_transaccion || t.createdAt || t.fecha;
+        let fechaFormateada = 'Sin fecha';
+        if (fechaStr) {
+            const fecha = new Date(fechaStr);
+            if (!isNaN(fecha.getTime())) {
+                fechaFormateada = fecha.toLocaleDateString('es-HN', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+            }
+        }
         
-        const statusClass = getStatusClass(t.estado);
-        const statusText = getStatusText(t.estado);
+        // Obtener información de la cuenta y socio
+        const cuenta = cuentas.find(c => c.id === t.id_cuenta);
+        const socio = cuenta ? socios.find(s => s.id === cuenta.id_socio) : null;
+        const nombreSocio = socio ? `${socio.nombre} ${socio.apellido}` : 'N/A';
+        const numeroCuenta = cuenta ? cuenta.numero_cuenta : `#${t.id_cuenta}`;
+        
         const tipoIcon = getTipoIcon(t.tipo);
+        const tipoFormateado = formatearTipoTransaccion(t.tipo);
+        
+        // Estado basado en si tiene saldo_nuevo (completada)
+        const estado = t.saldo_nuevo !== undefined ? 'completada' : 'pendiente';
+        const statusClass = getStatusClass(estado);
+        const statusText = getStatusText(estado);
         
         return `
             <tr>
-                <td><strong>#${t.id_transaccion}</strong></td>
-                <td>${fecha}</td>
-                <td>Socio #${t.id_socio}</td>
+                <td><strong>#${t.numero_transaccion || t.id}</strong></td>
+                <td>${fechaFormateada}</td>
+                <td>${nombreSocio}</td>
                 <td>
                     <span style="display: flex; align-items: center; gap: 0.5rem;">
-                        ${tipoIcon} ${capitalize(t.tipo)}
+                        ${tipoIcon} ${tipoFormateado}
                     </span>
                 </td>
-                <td>Cuenta #${t.id_cuenta}</td>
+                <td>Cuenta ${numeroCuenta}</td>
                 <td><strong>${formatCurrency(t.monto)}</strong></td>
                 <td>
                     <span class="status-badge ${statusClass}">
@@ -333,10 +368,10 @@ function displayTransactions(transacciones) {
                 </td>
                 <td>
                     <div class="action-buttons">
-                        <button class="action-icon-btn" onclick="viewTransaction(${t.id_transaccion})" title="Ver detalles">
+                        <button class="action-icon-btn" onclick="viewTransaction(${t.id})" title="Ver detalles">
                             👁️
                         </button>
-                        <button class="action-icon-btn" onclick="printTransaction(${t.id_transaccion})" title="Imprimir">
+                        <button class="action-icon-btn" onclick="printTransaction(${t.id})" title="Imprimir">
                             🖨️
                         </button>
                     </div>
@@ -344,6 +379,20 @@ function displayTransactions(transacciones) {
             </tr>
         `;
     }).join('');
+}
+
+function formatearTipoTransaccion(tipo) {
+    const tipos = {
+        'deposito': 'Depósito',
+        'retiro': 'Retiro',
+        'transferencia_entrada': 'Transferencia_entrada',
+        'transferencia_salida': 'Transferencia_salida',
+        'interes': 'Interés',
+        'cargo': 'Cargo',
+        'apertura': 'Apertura',
+        'cierre': 'Cierre'
+    };
+    return tipos[tipo] || capitalize(tipo);
 }
 
 // ===================================
@@ -406,7 +455,13 @@ function getTipoIcon(tipo) {
         'deposito': '💰',
         'retiro': '💸',
         'transferencia': '🔄',
-        'pago': '💳'
+        'transferencia_entrada': '📥',
+        'transferencia_salida': '📤',
+        'pago': '💳',
+        'interes': '📈',
+        'cargo': '📉',
+        'apertura': '🆕',
+        'cierre': '🔒'
     };
     return iconMap[tipo] || '📝';
 }
@@ -415,13 +470,286 @@ function getTipoIcon(tipo) {
 // Acciones de Transacciones
 // ===================================
 function viewTransaction(id) {
-    showNotification(`Ver detalles de transacción #${id}`, 'info');
-    // Aquí se implementará el modal de detalles
+    const transaccion = dashboardData.transacciones.find(t => t.id === id);
+    if (!transaccion) {
+        showNotification('Transacción no encontrada', 'error');
+        return;
+    }
+    
+    const cuenta = cuentas.find(c => c.id === transaccion.id_cuenta);
+    const socio = cuenta ? socios.find(s => s.id === cuenta.id_socio) : null;
+    const nombreSocio = socio ? `${socio.nombre} ${socio.apellido}` : 'N/A';
+    const numeroCuenta = cuenta ? cuenta.numero_cuenta : `#${transaccion.id_cuenta}`;
+    
+    const fechaStr = transaccion.fecha_transaccion || transaccion.createdAt;
+    let fechaFormateada = 'Sin fecha';
+    if (fechaStr) {
+        const fecha = new Date(fechaStr);
+        if (!isNaN(fecha.getTime())) {
+            fechaFormateada = fecha.toLocaleString('es-HN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    }
+    
+    // Crear modal de detalles
+    const modalHTML = `
+        <div id="modalDetallesTransaccion" class="modal-overlay" style="
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); display: flex; align-items: center;
+            justify-content: center; z-index: 10000;">
+            <div class="modal-content" style="
+                background: white; border-radius: 16px; padding: 2rem;
+                max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="margin: 0; color: #1e3a5f;">📋 Detalles de Transacción</h2>
+                    <button onclick="cerrarModalDetalles()" style="
+                        background: none; border: none; font-size: 1.5rem;
+                        cursor: pointer; color: #666;">&times;</button>
+                </div>
+                
+                <div style="background: #f8fafc; border-radius: 12px; padding: 1.5rem;">
+                    <div style="display: grid; gap: 1rem;">
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0;">
+                            <span style="color: #64748b;">ID Transacción:</span>
+                            <strong>${transaccion.numero_transaccion || '#' + transaccion.id}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0;">
+                            <span style="color: #64748b;">Tipo:</span>
+                            <strong>${getTipoIcon(transaccion.tipo)} ${formatearTipoTransaccion(transaccion.tipo)}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0;">
+                            <span style="color: #64748b;">Fecha:</span>
+                            <strong>${fechaFormateada}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0;">
+                            <span style="color: #64748b;">Cuenta:</span>
+                            <strong>${numeroCuenta}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0;">
+                            <span style="color: #64748b;">Titular:</span>
+                            <strong>${nombreSocio}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0;">
+                            <span style="color: #64748b;">Monto:</span>
+                            <strong style="color: ${transaccion.tipo === 'deposito' || transaccion.tipo === 'transferencia_entrada' ? '#10b981' : '#ef4444'}; font-size: 1.25rem;">
+                                ${transaccion.tipo === 'deposito' || transaccion.tipo === 'transferencia_entrada' ? '+' : '-'}${formatCurrency(transaccion.monto)}
+                            </strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0;">
+                            <span style="color: #64748b;">Saldo Anterior:</span>
+                            <strong>${formatCurrency(transaccion.saldo_anterior || 0)}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0;">
+                            <span style="color: #64748b;">Saldo Nuevo:</span>
+                            <strong style="color: #3b82f6;">${formatCurrency(transaccion.saldo_nuevo || 0)}</strong>
+                        </div>
+                        ${transaccion.descripcion ? `
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0;">
+                            <span style="color: #64748b;">Descripción:</span>
+                            <strong>${transaccion.descripcion}</strong>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button onclick="printTransaction(${transaccion.id})" style="
+                        flex: 1; padding: 0.75rem; background: #3b82f6; color: white;
+                        border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        🖨️ Imprimir
+                    </button>
+                    <button onclick="cerrarModalDetalles()" style="
+                        flex: 1; padding: 0.75rem; background: #e2e8f0; color: #475569;
+                        border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remover modal anterior si existe
+    const existingModal = document.getElementById('modalDetallesTransaccion');
+    if (existingModal) existingModal.remove();
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Cerrar al hacer clic fuera
+    document.getElementById('modalDetallesTransaccion').addEventListener('click', (e) => {
+        if (e.target.id === 'modalDetallesTransaccion') {
+            cerrarModalDetalles();
+        }
+    });
+}
+
+function cerrarModalDetalles() {
+    const modal = document.getElementById('modalDetallesTransaccion');
+    if (modal) modal.remove();
 }
 
 function printTransaction(id) {
-    showNotification(`Imprimiendo transacción #${id}`, 'info');
-    // Aquí se implementará la función de impresión
+    const transaccion = dashboardData.transacciones.find(t => t.id === id);
+    if (!transaccion) {
+        showNotification('Transacción no encontrada', 'error');
+        return;
+    }
+    
+    const cuenta = cuentas.find(c => c.id === transaccion.id_cuenta);
+    const socio = cuenta ? socios.find(s => s.id === cuenta.id_socio) : null;
+    const nombreSocio = socio ? `${socio.nombre} ${socio.apellido}` : 'N/A';
+    const numeroCuenta = cuenta ? cuenta.numero_cuenta : `#${transaccion.id_cuenta}`;
+    
+    const fechaStr = transaccion.fecha_transaccion || transaccion.createdAt;
+    let fechaFormateada = 'Sin fecha';
+    if (fechaStr) {
+        const fecha = new Date(fechaStr);
+        if (!isNaN(fecha.getTime())) {
+            fechaFormateada = fecha.toLocaleString('es-HN');
+        }
+    }
+    
+    // Crear ventana de impresión
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Recibo de Transacción - COOP-SMART</title>
+            <style>
+                body {
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    padding: 20px;
+                    max-width: 400px;
+                    margin: 0 auto;
+                }
+                .header {
+                    text-align: center;
+                    border-bottom: 2px solid #1e3a5f;
+                    padding-bottom: 15px;
+                    margin-bottom: 20px;
+                }
+                .header h1 {
+                    color: #1e3a5f;
+                    margin: 0;
+                    font-size: 24px;
+                }
+                .header p {
+                    color: #666;
+                    margin: 5px 0 0;
+                }
+                .tipo {
+                    text-align: center;
+                    background: ${transaccion.tipo === 'deposito' || transaccion.tipo === 'transferencia_entrada' ? '#d1fae5' : '#fee2e2'};
+                    color: ${transaccion.tipo === 'deposito' || transaccion.tipo === 'transferencia_entrada' ? '#065f46' : '#991b1b'};
+                    padding: 10px;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    margin-bottom: 20px;
+                }
+                .details {
+                    margin-bottom: 20px;
+                }
+                .detail-row {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 8px 0;
+                    border-bottom: 1px dashed #ddd;
+                }
+                .detail-row:last-child {
+                    border-bottom: none;
+                }
+                .label {
+                    color: #666;
+                }
+                .value {
+                    font-weight: bold;
+                    color: #333;
+                }
+                .monto {
+                    text-align: center;
+                    font-size: 28px;
+                    font-weight: bold;
+                    color: ${transaccion.tipo === 'deposito' || transaccion.tipo === 'transferencia_entrada' ? '#10b981' : '#ef4444'};
+                    margin: 20px 0;
+                    padding: 15px;
+                    background: #f8fafc;
+                    border-radius: 8px;
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 30px;
+                    padding-top: 15px;
+                    border-top: 2px solid #1e3a5f;
+                    color: #666;
+                    font-size: 12px;
+                }
+                @media print {
+                    body { padding: 0; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>🏦 COOP-SMART</h1>
+                <p>Sistema de Gestión Cooperativa</p>
+            </div>
+            
+            <div class="tipo">
+                ${formatearTipoTransaccion(transaccion.tipo).toUpperCase()}
+            </div>
+            
+            <div class="monto">
+                ${transaccion.tipo === 'deposito' || transaccion.tipo === 'transferencia_entrada' ? '+' : '-'}${formatCurrency(transaccion.monto)}
+            </div>
+            
+            <div class="details">
+                <div class="detail-row">
+                    <span class="label">No. Transacción:</span>
+                    <span class="value">${transaccion.numero_transaccion || transaccion.id}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Fecha:</span>
+                    <span class="value">${fechaFormateada}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Cuenta:</span>
+                    <span class="value">${numeroCuenta}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Titular:</span>
+                    <span class="value">${nombreSocio}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Saldo Anterior:</span>
+                    <span class="value">${formatCurrency(transaccion.saldo_anterior || 0)}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Saldo Nuevo:</span>
+                    <span class="value">${formatCurrency(transaccion.saldo_nuevo || 0)}</span>
+                </div>
+                ${transaccion.descripcion ? `
+                <div class="detail-row">
+                    <span class="label">Descripción:</span>
+                    <span class="value">${transaccion.descripcion}</span>
+                </div>
+                ` : ''}
+            </div>
+            
+            <div class="footer">
+                <p>Gracias por su preferencia</p>
+                <p>Impreso el: ${new Date().toLocaleString('es-HN')}</p>
+            </div>
+            
+            <script>window.onload = () => { window.print(); }<\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
 }
 
 // ===================================
@@ -567,18 +895,21 @@ function procesarMovimientosMensuales(transacciones) {
         }
         labels.push(meses[mes] + ' ' + anio);
         
-        // Filtrar transacciones del mes
+        // Filtrar transacciones del mes usando fecha correcta
         const transDelMes = transacciones.filter(t => {
-            const fecha = new Date(t.fecha);
+            const fechaStr = t.fecha_transaccion || t.createdAt;
+            if (!fechaStr) return false;
+            const fecha = new Date(fechaStr);
+            if (isNaN(fecha.getTime())) return false;
             return fecha.getMonth() === mes && fecha.getFullYear() === anio;
         });
         
         const totalDepositos = transDelMes
-            .filter(t => t.tipo === 'deposito')
+            .filter(t => t.tipo === 'deposito' || t.tipo === 'transferencia_entrada')
             .reduce((sum, t) => sum + parseFloat(t.monto || 0), 0);
         
         const totalRetiros = transDelMes
-            .filter(t => t.tipo === 'retiro')
+            .filter(t => t.tipo === 'retiro' || t.tipo === 'transferencia_salida')
             .reduce((sum, t) => sum + parseFloat(t.monto || 0), 0);
         
         depositos.push(totalDepositos);

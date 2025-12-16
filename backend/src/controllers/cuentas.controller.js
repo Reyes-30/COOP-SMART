@@ -103,38 +103,65 @@ const crearCuenta = async (req, res) => {
       moneda
     } = req.body;
 
+    console.log('📝 Creando cuenta:', {
+      id_socio,
+      tipo_cuenta,
+      monto_inicial,
+      usuario: req.usuario?.id
+    });
+
     // Validar socio existe
     const socio = await Socio.findByPk(id_socio);
     if (!socio) {
       return res.status(404).json({ error: 'Socio no encontrado' });
     }
 
+    // Validar monto inicial
+    const montoInicialNum = parseFloat(monto_inicial) || 0;
+    if (montoInicialNum < 0) {
+      return res.status(400).json({ error: 'El monto inicial no puede ser negativo' });
+    }
+
     // Generar número de cuenta
     const numero_cuenta = await generarNumeroCuenta();
 
-    // Crear cuenta
+    // Crear cuenta con el saldo inicial
     const nuevaCuenta = await Cuenta.create({
       numero_cuenta,
       id_socio,
       tipo_cuenta: tipo_cuenta || 'ahorro',
-      saldo: monto_inicial,
-      tasa_interes: tasa_interes || 0,
+      saldo: montoInicialNum,
+      tasa_interes: parseFloat(tasa_interes) || 0,
       fecha_vencimiento,
-      moneda: moneda || 'HNL'
+      moneda: moneda || 'HNL',
+      estado: 'activa'
     });
 
+    console.log(`✅ Cuenta creada: ${numero_cuenta} con saldo: L. ${montoInicialNum}`);
+
     // Registrar transacción de apertura si hay monto inicial
-    if (monto_inicial > 0) {
-      await Transaccion.create({
-        numero_transaccion: `TXN${Date.now()}`,
-        id_cuenta: nuevaCuenta.id,
-        tipo: 'apertura',
-        monto: monto_inicial,
-        saldo_anterior: 0,
-        saldo_nuevo: monto_inicial,
-        realizado_por: req.usuario.id,
-        descripcion: 'Depósito inicial de apertura de cuenta'
-      });
+    if (montoInicialNum > 0) {
+      try {
+        const numeroTransaccion = `APR${Date.now()}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+        
+        const transaccion = await Transaccion.create({
+          numero_transaccion: numeroTransaccion,
+          id_cuenta: nuevaCuenta.id,
+          tipo: 'apertura',
+          monto: montoInicialNum,
+          saldo_anterior: 0,
+          saldo_nuevo: montoInicialNum,
+          realizado_por: req.usuario.id,
+          descripcion: `Depósito inicial de apertura - Cuenta ${numero_cuenta}`,
+          referencia: `Apertura cuenta ${tipo_cuenta || 'ahorro'}`
+        });
+        
+        console.log(`✅ Transacción de apertura creada: ${numeroTransaccion} - Monto: L. ${montoInicialNum}`);
+      } catch (transError) {
+        console.error('⚠️ Error al crear transacción de apertura:', transError.message);
+        // No fallar la creación de cuenta si falla la transacción
+        // La cuenta ya tiene el saldo correcto
+      }
     }
 
     res.status(201).json({
@@ -143,8 +170,11 @@ const crearCuenta = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al crear cuenta:', error);
-    res.status(500).json({ error: 'Error al crear cuenta' });
+    console.error('❌ Error al crear cuenta:', error);
+    res.status(500).json({ 
+      error: 'Error al crear cuenta', 
+      detalle: error.message 
+    });
   }
 };
 

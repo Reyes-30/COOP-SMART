@@ -268,13 +268,13 @@ async function cargarPagos(idPrestamo) {
 
 function actualizarEstadisticas() {
     // Total prestado
-    const totalPrestado = prestamos
-        .filter(p => p.estado === 'aprobado' || p.estado === 'mora')
-        .reduce((sum, p) => sum + parseFloat(p.monto || 0), 0);
+    const prestamosActivosArray = prestamos.filter(p => p.estado === 'aprobado' || p.estado === 'mora');
+    const totalPrestado = prestamosActivosArray.reduce((sum, p) => sum + parseFloat(p.monto || 0), 0);
     document.getElementById('totalPrestado').textContent = formatearMoneda(totalPrestado);
+    document.getElementById('numPrestamos').textContent = `${prestamosActivosArray.length} préstamos`;
     
     // Préstamos activos
-    const activos = prestamos.filter(p => p.estado === 'aprobado' || p.estado === 'mora').length;
+    const activos = prestamosActivosArray.length;
     document.getElementById('prestamosActivos').textContent = activos;
     
     // Pendientes de aprobación

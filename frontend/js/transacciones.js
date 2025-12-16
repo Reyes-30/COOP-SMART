@@ -595,6 +595,20 @@ function llenarSelectCuentas() {
         });
 }
 
+function actualizarSelectCuentaDestino(idCuentaOrigen) {
+    const selectDestino = document.getElementById('id_cuenta_destino');
+    selectDestino.innerHTML = '<option value="">Seleccionar cuenta destino...</option>';
+    
+    cuentas
+        .filter(c => c.estado === 'activa' && c.id !== idCuentaOrigen)
+        .forEach(cuenta => {
+            const option = document.createElement('option');
+            option.value = cuenta.id;
+            option.textContent = `${cuenta.numero_cuenta} - ${obtenerTitularCuenta(cuenta.id_socio)} (${formatearMoneda(cuenta.saldo)})`;
+            selectDestino.appendChild(option);
+        });
+}
+
 function llenarFiltroCuentas() {
     const select = document.getElementById('filtroCuenta');
     select.innerHTML = '<option value="todas">Todas las cuentas</option>';
@@ -638,6 +652,11 @@ function mostrarInfoCuenta() {
     document.getElementById('infoCuentaSaldo').textContent = formatearMoneda(cuenta.saldo);
     
     infoBox.style.display = 'block';
+    
+    // Actualizar select de cuenta destino excluyendo la cuenta origen
+    actualizarSelectCuentaDestino(idCuenta);
+    
+    infoBox.style.display = 'block';
     actualizarPreviewSaldo();
 }
 
@@ -659,7 +678,7 @@ function actualizarPreviewSaldo() {
     
     if (tipo === 'deposito') {
         nuevoSaldo = saldoActual + monto;
-    } else if (tipo === 'retiro') {
+    } else if (tipo === 'retiro' || tipo === 'transferencia') {
         nuevoSaldo = saldoActual - monto;
     }
     
@@ -701,6 +720,23 @@ async function handleNuevaTransaccion(e) {
     if (tipo === 'retiro' && monto > parseFloat(cuenta.saldo)) {
         mostrarError('Fondos insuficientes');
         return;
+    }
+    
+    // Validación para transferencias
+    if (tipo === 'transferencia') {
+        const idCuentaDestino = parseInt(formData.get('id_cuenta_destino'));
+        if (!idCuentaDestino) {
+            mostrarError('Debe seleccionar una cuenta destino');
+            return;
+        }
+        if (idCuenta === idCuentaDestino) {
+            mostrarError('No puede transferir a la misma cuenta');
+            return;
+        }
+        if (monto > parseFloat(cuenta.saldo)) {
+            mostrarError('Fondos insuficientes para la transferencia');
+            return;
+        }
     }
     
     try {

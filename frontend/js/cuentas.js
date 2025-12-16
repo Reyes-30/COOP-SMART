@@ -499,12 +499,14 @@ async function handleCrearCuenta(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
+    const saldoInicial = parseFloat(formData.get('saldo_inicial')) || 0;
+    
     const data = {
         id_socio: parseInt(formData.get('id_socio')),
         tipo_cuenta: formData.get('tipo_cuenta'),
-        saldo: parseFloat(formData.get('saldo_inicial')) || 0,
+        monto_inicial: saldoInicial,
         tasa_interes: parseFloat(formData.get('tasa_interes')) || 0,
-        estado: 'activa'
+        moneda: 'HNL'
     };
     
     // Validaciones
@@ -513,7 +515,7 @@ async function handleCrearCuenta(e) {
         return;
     }
     
-    if (data.saldo < 100) {
+    if (saldoInicial < 100) {
         mostrarError('El saldo inicial mínimo es L. 100.00');
         return;
     }
@@ -531,19 +533,14 @@ async function handleCrearCuenta(e) {
         
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.message || 'Error al crear cuenta');
+            throw new Error(error.error || error.message || 'Error al crear cuenta');
         }
         
-        const nuevaCuenta = await response.json();
+        const resultado = await response.json();
         
-        mostrarExito('Cuenta creada exitosamente');
+        mostrarExito('Cuenta creada exitosamente con saldo inicial de ' + formatearMoneda(saldoInicial));
         cerrarModalNuevaCuenta();
         cargarCuentas();
-        
-        // Si hubo saldo inicial, crear transacción de depósito
-        if (data.saldo > 0) {
-            await crearTransaccion(nuevaCuenta.id, 'deposito', data.saldo, 'Depósito inicial');
-        }
         
     } catch (error) {
         console.error('Error:', error);
@@ -778,6 +775,9 @@ async function verDetalles(idCuenta) {
     // Cargar movimientos
     await cargarMovimientos(idCuenta);
     
+    // Cargar estadísticas
+    await cargarEstadisticas(idCuenta, cuenta);
+    
     // Mostrar modal
     document.getElementById('modalDetalles').classList.add('show');
     
@@ -836,6 +836,169 @@ async function cargarMovimientos(idCuenta) {
         `;
     }
 }
+
+async function cargarEstadisticas(idCuenta, cuenta) {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/api/transacciones?id_cuenta=${idCuenta}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) throw new Error('Error al cargar estadísticas');
+        
+        const movimientos = await response.json();
+        
+        // Calcular estadísticas
+        const totalDepositos = movimientos
+            .filter(m => m.tipo === 'deposito')
+            .reduce((sum, m) => sum + parseFloat(m.monto), 0);
+        
+        const totalRetiros = movimientos
+            .filter(m => m.tipo === 'retiro')
+            .reduce((sum, m) => sum + parseFloat(m.monto), 0);
+        
+        const transferenciasSalida = movimientos
+            .filter(m => m.tipo === 'transferencia_salida')
+            .reduce((sum, m) => sum + parseFloat(m.monto), 0);
+        
+        const transferenciasEntrada = movimientos
+            .filter(m => m.tipo === 'transferencia_entrada')
+            .reduce((sum, m) => sum + parseFloat(m.monto), 0);
+        
+        const totalTransacciones = movimientos.length;
+        const depositosCount = movimientos.filter(m => m.tipo === 'deposito').length;
+        const retirosCount = movimientos.filter(m => m.tipo === 'retiro').length;
+        const transferenciasCount = movimientos.filter(m => m.tipo.includes('transferencia')).length;
+        
+        // Calcular promedio de movimientos
+        const promedioMovimiento = totalTransacciones > 0 
+            ? (totalDepositos + totalRetiros) / totalTransacciones 
+            : 0;
+        
+        // Calcular días desde apertura
+        const fechaApertura = new Date(cuenta.fecha_apertura);
+        const hoy = new Date();
+        const diasActiva = Math.floor((hoy - fechaApertura) / (1000 * 60 * 60 * 24));
+        
+        // Encontrar última transacción
+        const ultimaTransaccion = movimientos.length > 0 
+            ? movimientos[0] 
+            : null;
+        
+        // Generar HTML de estadísticas
+        const estadisticasHTML = `
+            <div class="estadisticas-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #10B981;">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Total Depósitos</div>
+                        <div class="stat-value">${formatearMoneda(totalDepositos)}</div>
+                        <div class="stat-subtitle">${depositosCount} transacciones</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #EF4444;">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Total Retiros</div>
+                        <div class="stat-value">${formatearMoneda(totalRetiros)}</div>
+                        <div class="stat-subtitle">${retirosCount} transacciones</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #3B82F6;">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Transferencias</div>
+                        <div class="stat-value">${transferenciasCount}</div>
+                        <div class="stat-subtitle">Entrada: ${formatearMoneda(transferenciasEntrada)} | Salida: ${formatearMoneda(transferenciasSalida)}</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #8B5CF6;">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Promedio por Movimiento</div>
+                        <div class="stat-value">${formatearMoneda(promedioMovimiento)}</div>
+                        <div class="stat-subtitle">${totalTransacciones} movimientos totales</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #F59E0B;">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Días Activa</div>
+                        <div class="stat-value">${diasActiva}</div>
+                        <div class="stat-subtitle">Desde ${formatearFecha(cuenta.fecha_apertura)}</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #06B6D4;">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Última Transacción</div>
+                        <div class="stat-value stat-value-small">${ultimaTransaccion ? capitalizar(ultimaTransaccion.tipo) : 'N/A'}</div>
+                        <div class="stat-subtitle">${ultimaTransaccion ? formatearFechaHora(ultimaTransaccion.fecha) : 'Sin movimientos'}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="estadisticas-resumen">
+                <h4><i class="fas fa-info-circle"></i> Resumen de la Cuenta</h4>
+                <div class="resumen-items">
+                    <div class="resumen-item">
+                        <span class="resumen-label">Balance Neto (Depósitos - Retiros):</span>
+                        <span class="resumen-value ${totalDepositos - totalRetiros >= 0 ? 'positivo' : 'negativo'}">
+                            ${formatearMoneda(totalDepositos - totalRetiros)}
+                        </span>
+                    </div>
+                    <div class="resumen-item">
+                        <span class="resumen-label">Actividad Promedio:</span>
+                        <span class="resumen-value">
+                            ${diasActiva > 0 ? (totalTransacciones / diasActiva * 30).toFixed(1) : '0'} transacciones/mes
+                        </span>
+                    </div>
+                    <div class="resumen-item">
+                        <span class="resumen-label">Tasa de Interés:</span>
+                        <span class="resumen-value">${cuenta.tasa_interes}% anual</span>
+                    </div>
+                    <div class="resumen-item">
+                        <span class="resumen-label">Interés Estimado (30 días):</span>
+                        <span class="resumen-value positivo">
+                            ${formatearMoneda((cuenta.saldo * cuenta.tasa_interes / 100 / 12))}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('tabEstadisticas').innerHTML = estadisticasHTML;
+        
+    } catch (error) {
+        console.error('Error al cargar estadísticas:', error);
+        document.getElementById('tabEstadisticas').innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #EF4444;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                <p>Error al cargar estadísticas</p>
+            </div>
+        `;
+    }
+}
+
 
 function cerrarModalDetalles() {
     document.getElementById('modalDetalles').classList.remove('show');

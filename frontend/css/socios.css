@@ -263,6 +263,9 @@ body {
 
 .btn-icon {
     font-size: 1rem;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 0.25rem;
 }
 
 /* Table Section */
@@ -481,8 +484,9 @@ body {
     padding: var(--spacing-lg) var(--spacing-xl);
     border-top: 2px solid var(--gray-200);
     display: flex;
-    gap: var(--spacing-md);
+    gap: 1rem;
     justify-content: flex-end;
+    align-items: center;
 }
 
 /* Form Styles */

@@ -563,26 +563,112 @@ async function exportarPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const tipoReporte = document.getElementById('tipo-reporte').selectedOptions[0].text;
+    const fechaInicio = document.getElementById('filtro-fecha-inicio').value;
+    const fechaFin = document.getElementById('filtro-fecha-fin').value;
 
-    // Encabezado
-    doc.setFontSize(18);
-    doc.setTextColor(52, 152, 219);
-    doc.text('COOP-SMART', 20, 20);
+    // Encabezado con estilo
+    doc.setFillColor(30, 64, 175);
+    doc.rect(0, 0, 210, 35, 'F');
+    doc.setFontSize(24);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont(undefined, 'bold');
+    doc.text('COOP-SMART', 15, 15);
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'normal');
+    doc.text('Sistema de Gestión Cooperativa', 15, 22);
+    
     doc.setFontSize(14);
-    doc.setTextColor(0, 0, 0);
-    doc.text(tipoReporte, 20, 30);
-    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    doc.text(tipoReporte, 15, 30);
+    
+    // Información de fechas
+    doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Generado: ${obtenerFechaHoraActual()}`, 20, 37);
+    doc.setFont(undefined, 'normal');
+    let yPos = 42;
+    doc.text(`Período: ${fechaInicio} al ${fechaFin}`, 15, yPos);
+    yPos += 5;
+    doc.text(`Generado: ${obtenerFechaHoraActual()}`, 15, yPos);
+    yPos += 10;
 
-    let yPos = 50;
+    doc.setTextColor(0, 0, 0);
 
     // Contenido según tipo de reporte
     switch (datosActualesReporte.tipo) {
+        case 'resumen':
+            // KPIs principales
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(30, 64, 175);
+            doc.text('Resumen General', 15, yPos);
+            yPos += 8;
+            
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(0, 0, 0);
+            
+            const datos = datosActualesReporte.datos;
+            
+            // Tabla de KPIs
+            doc.autoTable({
+                startY: yPos,
+                head: [['Indicador', 'Valor']],
+                body: [
+                    ['👥 Socios Activos', `${datos.total_socios_activos || 0} de ${datos.total_socios || 0} totales`],
+                    ['💳 Cuentas Activas', datos.total_cuentas_activas || 0],
+                    ['💰 Saldo Total en Cuentas', formatearMoneda(datos.saldo_total_cuentas || 0)],
+                    ['💵 Préstamos Activos', datos.prestamos_activos || 0],
+                    ['💰 Monto Total Prestado', formatearMoneda(datos.monto_total_prestamos || 0)],
+                    ['⏳ Préstamos Pendientes', datos.prestamos_pendientes || 0],
+                    ['💸 Saldo Pendiente Total', formatearMoneda(datos.saldo_pendiente_total || 0)],
+                    ['💚 Total Pagos del Período', formatearMoneda(datos.total_pagos_periodo || 0)],
+                    ['📊 Cantidad de Pagos', datos.cantidad_pagos_periodo || 0],
+                    ['📈 Total Depósitos', formatearMoneda(datos.total_depositos || 0)],
+                    ['📉 Total Retiros', formatearMoneda(datos.total_retiros || 0)]
+                ],
+                headStyles: { fillColor: [30, 64, 175], textColor: 255, fontSize: 10 },
+                bodyStyles: { fontSize: 9 },
+                alternateRowStyles: { fillColor: [245, 247, 250] },
+                margin: { left: 15, right: 15 }
+            });
+            break;
+
+        case 'socios':
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(30, 64, 175);
+            doc.text('Socios por Estado', 15, yPos);
+            yPos += 8;
+            
+            doc.autoTable({
+                startY: yPos,
+                head: [['Estado', 'Cantidad']],
+                body: datosActualesReporte.sociosPorEstado.map(s => [s.estado, s.cantidad]),
+                headStyles: { fillColor: [30, 64, 175], textColor: 255 },
+                alternateRowStyles: { fillColor: [245, 247, 250] },
+                margin: { left: 15, right: 15 }
+            });
+            
+            yPos = doc.lastAutoTable.finalY + 10;
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text('Crecimiento de Socios', 15, yPos);
+            yPos += 8;
+            
+            doc.autoTable({
+                startY: yPos,
+                head: [['Mes', 'Nuevos Socios']],
+                body: datosActualesReporte.crecimiento.map(c => [c.mes, c.nuevos_socios]),
+                headStyles: { fillColor: [30, 64, 175], textColor: 255 },
+                alternateRowStyles: { fillColor: [245, 247, 250] },
+                margin: { left: 15, right: 15 }
+            });
+            break;
+
         case 'cuentas':
             doc.autoTable({
                 startY: yPos,
-                head: [['Tipo', 'Cantidad', 'Saldo Total', 'Promedio', 'Máximo', 'Mínimo']],
+                head: [['Tipo de Cuenta', 'Cantidad', 'Saldo Total', 'Saldo Promedio', 'Saldo Máximo', 'Saldo Mínimo']],
                 body: datosActualesReporte.datos.map(c => [
                     c.tipo_cuenta,
                     c.cantidad,
@@ -590,59 +676,90 @@ async function exportarPDF() {
                     formatearMoneda(c.saldo_promedio),
                     formatearMoneda(c.saldo_maximo),
                     formatearMoneda(c.saldo_minimo)
-                ])
+                ]),
+                headStyles: { fillColor: [30, 64, 175], textColor: 255, fontSize: 9 },
+                bodyStyles: { fontSize: 8 },
+                alternateRowStyles: { fillColor: [245, 247, 250] },
+                margin: { left: 15, right: 15 }
             });
             break;
 
         case 'prestamos':
             doc.autoTable({
                 startY: yPos,
-                head: [['ID', 'Socio', 'Monto', 'Tasa%', 'Plazo', 'Estado']],
+                head: [['ID', 'Socio', 'Monto', 'Tasa%', 'Plazo', 'Cuota', 'Saldo Pend.', 'Estado']],
                 body: datosActualesReporte.datos.map(p => [
                     p.id,
                     `${p.socio_nombre} ${p.socio_apellido}`,
                     formatearMoneda(p.monto),
                     `${p.tasa_interes}%`,
                     `${p.plazo_meses}m`,
+                    formatearMoneda(p.cuota_mensual),
+                    formatearMoneda(p.saldo_pendiente),
                     p.estado
-                ])
+                ]),
+                headStyles: { fillColor: [30, 64, 175], textColor: 255, fontSize: 8 },
+                bodyStyles: { fontSize: 7 },
+                alternateRowStyles: { fillColor: [245, 247, 250] },
+                margin: { left: 15, right: 15 }
             });
             break;
 
         case 'mora':
             doc.autoTable({
                 startY: yPos,
-                head: [['ID', 'Socio', 'Monto', 'Saldo Pend.', 'Días Mora']],
+                head: [['ID', 'Socio', 'Teléfono', 'Monto', 'Saldo Pend.', 'Cuota', 'Días Mora']],
                 body: datosActualesReporte.datos.map(p => [
                     p.id,
                     `${p.nombre} ${p.apellido}`,
+                    p.telefono,
                     formatearMoneda(p.monto),
                     formatearMoneda(p.saldo_pendiente),
+                    formatearMoneda(p.cuota_mensual),
                     `${p.dias_mora} días`
-                ])
+                ]),
+                headStyles: { fillColor: [239, 68, 68], textColor: 255, fontSize: 8 },
+                bodyStyles: { fontSize: 7 },
+                alternateRowStyles: { fillColor: [254, 242, 242] },
+                margin: { left: 15, right: 15 }
             });
             break;
 
         case 'top-socios':
             doc.autoTable({
                 startY: yPos,
-                head: [['#', 'Nombre', 'Identificación', 'Saldo Total', 'Deuda']],
+                head: [['#', 'Nombre', 'Identificación', 'Saldo Total', 'Deuda Total']],
                 body: datosActualesReporte.datos.map((s, i) => [
                     i + 1,
                     `${s.nombre} ${s.apellido}`,
                     s.identificacion,
                     formatearMoneda(s.saldo_total),
                     formatearMoneda(s.deuda_total)
-                ])
+                ]),
+                headStyles: { fillColor: [30, 64, 175], textColor: 255 },
+                bodyStyles: { fontSize: 8 },
+                alternateRowStyles: { fillColor: [245, 247, 250] },
+                margin: { left: 15, right: 15 }
             });
             break;
 
         default:
-            doc.text('Reporte generado exitosamente', 20, yPos);
+            doc.setFontSize(10);
+            doc.text('Reporte generado exitosamente', 15, yPos);
+    }
+
+    // Pie de página
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+        doc.text('COOP-SMART - Sistema de Gestión Cooperativa', 15, doc.internal.pageSize.height - 10);
     }
 
     // Guardar PDF
-    const nombreArchivo = `reporte-${datosActualesReporte.tipo}-${Date.now()}.pdf`;
+    const nombreArchivo = `${tipoReporte.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(nombreArchivo);
 }
 
