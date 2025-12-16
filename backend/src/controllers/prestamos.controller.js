@@ -2,7 +2,7 @@
  * Controlador de Préstamos
  */
 
-const { Prestamo, Socio, Cuenta } = require('../models');
+const { Prestamo, Socio, Cuenta, Usuario } = require('../models');
 
 const generarNumeroPrestamo = () => {
   const pref = 'PR';
@@ -41,10 +41,33 @@ const mapEstadoOut = (estado) => {
 
 /**
  * Obtener todos los préstamos
+ * Si es socio, solo muestra sus propios préstamos
  */
 const obtenerPrestamos = async (req, res) => {
   try {
-    const prestamos = await Prestamo.findAll({ order: [['createdAt', 'DESC']] });
+    const { socio_id } = req.query;
+    let where = {};
+    
+    // Si es un socio, solo puede ver sus propios préstamos
+    if (req.usuario.rol === 'socio') {
+      const usuario = await Usuario.findByPk(req.usuario.id);
+      if (usuario && usuario.email) {
+        const socio = await Socio.findOne({ where: { email: usuario.email } });
+        if (socio) {
+          where.id_socio = socio.id;
+        } else {
+          return res.json([]);
+        }
+      }
+    } else if (socio_id) {
+      where.id_socio = socio_id;
+    }
+    
+    const prestamos = await Prestamo.findAll({ 
+      where,
+      order: [['createdAt', 'DESC']] 
+    });
+    
     // Adaptar forma al frontend
     const adaptados = prestamos.map(p => ({
       id: p.id,
@@ -56,11 +79,14 @@ const obtenerPrestamos = async (req, res) => {
       plazo_meses: parseInt(p.plazo_meses || 0),
       cuota_mensual: parseFloat(p.cuota_mensual || calcularCuotaMensual(p.monto_aprobado || p.monto_solicitado, p.tasa_interes, p.plazo_meses)),
       proposito: p.tipo_prestamo || 'personal',
+      tipo_prestamo: p.tipo_prestamo || 'Personal',
       descripcion: p.proposito || null,
       estado: mapEstadoOut(p.estado),
       fecha_solicitud: p.fecha_solicitud,
       fecha_aprobacion: p.fecha_aprobacion,
-      id_cuenta: p.id_cuenta || null
+      id_cuenta: p.id_cuenta || null,
+      monto_pagado: parseFloat(p.monto_pagado || 0),
+      interes_total: parseFloat(p.interes_total || 0)
     }));
     res.json(adaptados);
   } catch (error) {

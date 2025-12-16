@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generar Iconos</title>
+</head>
+<body>
+    <canvas id="canvas96" width="96" height="96"></canvas>
+    <canvas id="canvas144" width="144" height="144"></canvas>
+    <canvas id="canvas192" width="192" height="192"></canvas>
+    <canvas id="canvas512" width="512" height="512"></canvas>
+    
+    <script>
+        // Función para crear icono
+        function createIcon(canvas) {
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width;
+            
+            // Fondo azul
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Texto blanco
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${size * 0.5}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('CS', size / 2, size / 2);
+        }
+        
+        // Crear todos los iconos
+        createIcon(document.getElementById('canvas96'));
+        createIcon(document.getElementById('canvas144'));
+        createIcon(document.getElementById('canvas192'));
+        createIcon(document.getElementById('canvas512'));
+        
+        // Descargar iconos
+        setTimeout(() => {
+            ['96', '144', '192', '512'].forEach(size => {
+                const canvas = document.getElementById(`canvas${size}`);
+                const link = document.createElement('a');
+                link.download = `icon-${size}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+            
+            alert('Iconos generados! Mueve los archivos a la carpeta mobile/icons/');
+        }, 500);
+    </script>
+</body>
+</html>

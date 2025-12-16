@@ -2,7 +2,7 @@
  * Controlador de Cuentas
  */
 
-const { Cuenta, Socio, Transaccion } = require('../models');
+const { Cuenta, Socio, Transaccion, Usuario } = require('../models');
 
 /**
  * Generar número de cuenta único
@@ -16,14 +16,32 @@ const generarNumeroCuenta = async () => {
 
 /**
  * Obtener todas las cuentas
+ * Si es socio, solo muestra sus propias cuentas
  */
 const obtenerCuentas = async (req, res) => {
   try {
-    const { pagina = 1, limite = 10, id_socio, estado } = req.query;
+    const { pagina = 1, limite = 50, id_socio, socio_id, estado } = req.query;
     const offset = (pagina - 1) * limite;
 
     const where = {};
-    if (id_socio) where.id_socio = id_socio;
+    
+    // Si es un socio, solo puede ver sus propias cuentas
+    if (req.usuario.rol === 'socio') {
+      // Buscar el socio por email del usuario
+      const usuario = await Usuario.findByPk(req.usuario.id);
+      if (usuario && usuario.email) {
+        const socio = await Socio.findOne({ where: { email: usuario.email } });
+        if (socio) {
+          where.id_socio = socio.id;
+        } else {
+          return res.json({ cuentas: [], paginacion: { total: 0 } });
+        }
+      }
+    } else {
+      // Admin/cajero pueden filtrar por socio_id
+      if (id_socio || socio_id) where.id_socio = id_socio || socio_id;
+    }
+    
     if (estado) where.estado = estado;
 
     const { count, rows } = await Cuenta.findAndCountAll({
@@ -31,22 +49,25 @@ const obtenerCuentas = async (req, res) => {
       include: [{
         model: Socio,
         as: 'socio',
-        attributes: ['id', 'nombre', 'apellido', 'identidad']
+        attributes: ['id', 'nombre', 'apellido', 'identidad', 'genero']
       }],
       limit: parseInt(limite),
       offset: parseInt(offset),
       order: [['createdAt', 'DESC']]
     });
 
-    res.json({
-      cuentas: rows,
-      paginacion: {
-        total: count,
-        pagina: parseInt(pagina),
-        limite: parseInt(limite),
-        total_paginas: Math.ceil(count / limite)
-      }
-    });
+    // Formatear respuesta para compatibilidad con app móvil
+    const cuentasFormateadas = rows.map(c => ({
+      id: c.id,
+      numero_cuenta: c.numero_cuenta,
+      tipo_cuenta: c.tipo_cuenta,
+      saldo: c.saldo,
+      estado: c.estado,
+      tasa_interes: c.tasa_interes,
+      socio: c.socio
+    }));
+
+    res.json(cuentasFormateadas);
 
   } catch (error) {
     console.error('Error al obtener cuentas:', error);

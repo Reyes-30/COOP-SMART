@@ -7,16 +7,22 @@ const router = express.Router();
 const transaccionesController = require('../controllers/transacciones.controller');
 const { verificarToken, verificarRol } = require('../middlewares/auth');
 
-// Todas las rutas requieren autenticaciÛn
+// Todas las rutas requieren autenticaci√≥n
 router.use(verificarToken);
 
 // Obtener todas las transacciones
 router.get('/', transaccionesController.obtenerTransacciones);
 
-// Crear una nueva transacciÛn (solo admin y cajero)
+// Crear una nueva transacci√≥n (solo admin y cajero)
 router.post('/', 
   verificarRol('administrador', 'cajero'),
   transaccionesController.crearTransaccion
+);
+
+// Transferencia m√≥vil (permitido para socios - solo transferencias entre sus cuentas)
+router.post('/transferencia-movil', 
+  verificarRol('administrador', 'cajero', 'socio'),
+  transaccionesController.transferenciaSocio
 );
 
 module.exports = router;

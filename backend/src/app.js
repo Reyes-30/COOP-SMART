@@ -9,11 +9,15 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
+const path = require('path');
 
 const app = express();
 
 // Middlewares de seguridad y optimización
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false, // Desactivar CSP para desarrollo
+  crossOriginEmbedderPolicy: false
+}));
 app.use(compression());
 app.use(cors({
   origin: '*', // Permitir todas las conexiones en desarrollo
@@ -23,6 +27,9 @@ app.use(cors({
 // Middlewares de parseo
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Servir archivos estáticos de la app móvil
+app.use('/mobile', express.static(path.join(__dirname, '../../mobile')));
 
 // Logger
 if (process.env.NODE_ENV !== 'production') {

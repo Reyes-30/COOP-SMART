@@ -75,7 +75,7 @@ function cargarUsuario() {
         if (userStr) {
             const user = JSON.parse(userStr);
             document.getElementById('userName').textContent = user.nombre_completo || user.nombre_usuario || 'Usuario';
-            document.getElementById('userRole').textContent = user.rol || 'Usuario';
+            document.getElementById('userRole').textContent = translateRole(user.rol, user.genero);
         } else {
             document.getElementById('userName').textContent = 'Usuario';
             document.getElementById('userRole').textContent = 'Usuario';
@@ -85,6 +85,18 @@ function cargarUsuario() {
         document.getElementById('userName').textContent = 'Usuario';
         document.getElementById('userRole').textContent = 'Usuario';
     }
+}
+
+function translateRole(role, genero) {
+    const roles = {
+        'administrador': 'Administrador',
+        'cajero': genero === 'femenino' ? 'Cajera' : 'Cajero',
+        'socio': 'Socio',
+        'socios': 'Socios',
+        'cliente': 'Cliente',
+        'clientes': 'Clientes'
+    };
+    return roles[role?.toLowerCase()] || role || 'Usuario';
 }
 
 // ============================================

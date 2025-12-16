@@ -229,6 +229,10 @@ exports.getTransaccionesPorTipo = async (req, res) => {
   try {
     const { fechaInicio, fechaFin } = req.query;
 
+    console.log('📊 Generando reporte de transacciones por tipo...');
+    console.log('Fecha inicio:', fechaInicio);
+    console.log('Fecha fin:', fechaFin);
+
     const resultado = await sequelize.query(`
       SELECT 
         t.tipo,
@@ -236,8 +240,8 @@ exports.getTransaccionesPorTipo = async (req, res) => {
         COALESCE(SUM(t.monto), 0) as monto_total,
         ROUND(AVG(t.monto), 2) as monto_promedio
       FROM transacciones t
-      WHERE t.fecha >= :fechaInicio 
-        AND t.fecha <= :fechaFin
+      WHERE t.fecha_transaccion >= :fechaInicio 
+        AND t.fecha_transaccion <= :fechaFin
       GROUP BY t.tipo
       ORDER BY monto_total DESC
     `, {
@@ -248,10 +252,12 @@ exports.getTransaccionesPorTipo = async (req, res) => {
       type: QueryTypes.SELECT
     });
 
-    res.json(resultado);
+    console.log('✅ Resultado obtenido:', resultado);
+    res.json(resultado || []);
   } catch (error) {
-    console.error('Error al obtener transacciones por tipo:', error);
-    res.status(500).json({ error: 'Error al generar reporte de transacciones' });
+    console.error('❌ Error al obtener transacciones por tipo:', error);
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({ error: 'Error al generar reporte de transacciones', details: error.message });
   }
 };
 

@@ -2,7 +2,8 @@
  * Controlador de Transacciones
  */
 
-const { Cuenta, Transaccion } = require('../models');
+const { Cuenta, Transaccion, Socio, Usuario } = require('../models');
+const { Op } = require('sequelize');
 
 /**
  * Generar número de transacción único
@@ -15,17 +16,49 @@ const generarNumeroTransaccion = (pref = 'TXN') => {
 
 /**
  * Obtener transacciones, opcionalmente filtradas por cuenta
+ * Si es socio, solo muestra transacciones de sus cuentas
  */
 const obtenerTransacciones = async (req, res) => {
   try {
-    const { id_cuenta } = req.query;
-    const where = {};
-    if (id_cuenta) where.id_cuenta = id_cuenta;
+    const { id_cuenta, tipo, limit = 100 } = req.query;
+    let where = {};
+    
+    // Si es un socio, solo puede ver transacciones de sus propias cuentas
+    if (req.usuario.rol === 'socio') {
+      const usuario = await Usuario.findByPk(req.usuario.id);
+      if (usuario && usuario.email) {
+        const socio = await Socio.findOne({ where: { email: usuario.email } });
+        if (socio) {
+          // Obtener todas las cuentas del socio
+          const cuentas = await Cuenta.findAll({ 
+            where: { id_socio: socio.id },
+            attributes: ['id']
+          });
+          const cuentaIds = cuentas.map(c => c.id);
+          where.id_cuenta = { [Op.in]: cuentaIds };
+        } else {
+          return res.json([]);
+        }
+      }
+    } else if (id_cuenta) {
+      where.id_cuenta = id_cuenta;
+    }
+    
+    // Filtrar por tipo si se especifica
+    if (tipo && tipo !== 'todos') {
+      if (tipo === 'deposito') {
+        where.tipo = { [Op.in]: ['deposito', 'transferencia_entrada'] };
+      } else if (tipo === 'retiro') {
+        where.tipo = { [Op.in]: ['retiro', 'transferencia_salida'] };
+      } else if (tipo === 'transferencia') {
+        where.tipo = { [Op.in]: ['transferencia_entrada', 'transferencia_salida'] };
+      }
+    }
 
     const transacciones = await Transaccion.findAll({
       where,
       order: [['fecha_transaccion', 'DESC']],
-      limit: 100
+      limit: parseInt(limit)
     });
 
     res.json(transacciones);
@@ -167,7 +200,124 @@ const crearTransaccion = async (req, res) => {
   }
 };
 
+/**
+ * Transferencia para socios desde app móvil
+ * Los socios solo pueden transferir desde sus propias cuentas
+ */
+const transferenciaSocio = async (req, res) => {
+  try {
+    const { cuenta_origen_id, cuenta_destino_id, monto, descripcion } = req.body;
+
+    // Validaciones básicas
+    if (!cuenta_origen_id || !cuenta_destino_id || !monto || monto <= 0) {
+      return res.status(400).json({ error: 'Datos de transferencia inválidos' });
+    }
+
+    // Obtener cuenta origen
+    const cuentaOrigen = await Cuenta.findByPk(cuenta_origen_id, {
+      include: [{ model: Socio, as: 'socio' }]
+    });
+
+    if (!cuentaOrigen) {
+      return res.status(404).json({ error: 'Cuenta origen no encontrada' });
+    }
+
+    // Verificar que la cuenta origen pertenece al usuario (si es socio)
+    if (req.usuario.rol === 'socio') {
+      // Buscar socio por email del usuario
+      const socio = await Socio.findOne({
+        where: { email: req.usuario.email }
+      });
+
+      if (!socio || cuentaOrigen.id_socio !== socio.id) {
+        return res.status(403).json({ error: 'No tienes permiso para transferir desde esta cuenta' });
+      }
+    }
+
+    if (cuentaOrigen.estado !== 'activa') {
+      return res.status(400).json({ error: 'La cuenta origen no está activa' });
+    }
+
+    // Buscar cuenta destino por número de cuenta
+    let cuentaDestino;
+    if (isNaN(cuenta_destino_id)) {
+      // Es un número de cuenta
+      cuentaDestino = await Cuenta.findOne({
+        where: { numero_cuenta: cuenta_destino_id }
+      });
+    } else {
+      cuentaDestino = await Cuenta.findByPk(cuenta_destino_id);
+    }
+
+    if (!cuentaDestino) {
+      return res.status(404).json({ error: 'Cuenta destino no encontrada' });
+    }
+
+    if (cuentaDestino.estado !== 'activa') {
+      return res.status(400).json({ error: 'La cuenta destino no está activa' });
+    }
+
+    if (cuentaOrigen.id === cuentaDestino.id) {
+      return res.status(400).json({ error: 'No puede transferir a la misma cuenta' });
+    }
+
+    const montoTransfer = parseFloat(monto);
+    const saldoOrigen = parseFloat(cuentaOrigen.saldo);
+
+    if (saldoOrigen < montoTransfer) {
+      return res.status(400).json({ error: 'Saldo insuficiente para la transferencia' });
+    }
+
+    // Realizar la transferencia
+    const saldoNuevoOrigen = saldoOrigen - montoTransfer;
+    const saldoAnteriorDestino = parseFloat(cuentaDestino.saldo);
+    const saldoNuevoDestino = saldoAnteriorDestino + montoTransfer;
+
+    // Actualizar saldos
+    await cuentaOrigen.update({ saldo: saldoNuevoOrigen });
+    await cuentaDestino.update({ saldo: saldoNuevoDestino });
+
+    // Registrar transacción de salida
+    const numTransSalida = generarNumeroTransaccion('TRM');
+    await Transaccion.create({
+      numero_transaccion: numTransSalida,
+      id_cuenta: cuentaOrigen.id,
+      tipo: 'transferencia_salida',
+      monto: montoTransfer,
+      saldo_anterior: saldoOrigen,
+      saldo_nuevo: saldoNuevoOrigen,
+      realizado_por: req.usuario.id,
+      descripcion: descripcion || `Transferencia móvil a ${cuentaDestino.numero_cuenta}`,
+      referencia: `Destino: ${cuentaDestino.numero_cuenta}`
+    });
+
+    // Registrar transacción de entrada
+    const numTransEntrada = generarNumeroTransaccion('TRM');
+    await Transaccion.create({
+      numero_transaccion: numTransEntrada,
+      id_cuenta: cuentaDestino.id,
+      tipo: 'transferencia_entrada',
+      monto: montoTransfer,
+      saldo_anterior: saldoAnteriorDestino,
+      saldo_nuevo: saldoNuevoDestino,
+      realizado_por: req.usuario.id,
+      descripcion: descripcion || `Transferencia móvil desde ${cuentaOrigen.numero_cuenta}`,
+      referencia: `Origen: ${cuentaOrigen.numero_cuenta}`
+    });
+
+    res.status(201).json({
+      mensaje: 'Transferencia realizada exitosamente',
+      saldo_nuevo: saldoNuevoOrigen
+    });
+
+  } catch (error) {
+    console.error('Error en transferencia móvil:', error);
+    res.status(500).json({ error: 'Error al realizar la transferencia' });
+  }
+};
+
 module.exports = {
   obtenerTransacciones,
-  crearTransaccion
+  crearTransaccion,
+  transferenciaSocio
 };

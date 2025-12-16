@@ -70,20 +70,23 @@ function loadUserData() {
         });
         
         userRoleElements.forEach(el => {
-            el.textContent = translateRole(user.rol) || 'Usuario';
+            el.textContent = translateRole(user.rol, user.genero);
         });
     } catch (error) {
         console.error('Error al cargar usuario:', error);
     }
 }
 
-function translateRole(role) {
+function translateRole(role, genero) {
     const roles = {
         'administrador': 'Administrador',
-        'cajero': 'Cajero',
-        'socio': 'Socio'
+        'cajero': genero === 'femenino' ? 'Cajera' : 'Cajero',
+        'socio': 'Socio',
+        'socios': 'Socios',
+        'cliente': 'Cliente',
+        'clientes': 'Clientes'
     };
-    return roles[role] || role;
+    return roles[role?.toLowerCase()] || role || 'Usuario';
 }
 
 // ===================================

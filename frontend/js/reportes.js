@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Verificar autenticación
 function verificarAutenticacion() {
     const token = localStorage.getItem('token');
-    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    const usuario = JSON.parse(localStorage.getItem('user') || '{}');
 
     if (!token) {
         window.location.href = 'login.html';
@@ -27,11 +27,23 @@ function verificarAutenticacion() {
     const userRoleElement = document.getElementById('userRole');
     
     if (userNameElement) {
-        userNameElement.textContent = usuario.nombre || 'Usuario';
+        userNameElement.textContent = usuario.nombre_completo || usuario.nombre_usuario || 'Usuario';
     }
     if (userRoleElement) {
-        userRoleElement.textContent = usuario.rol || 'N/A';
+        userRoleElement.textContent = translateRole(usuario.rol, usuario.genero);
     }
+}
+
+function translateRole(role, genero) {
+    const roles = {
+        'administrador': 'Administrador',
+        'cajero': genero === 'femenino' ? 'Cajera' : 'Cajero',
+        'socio': 'Socio',
+        'socios': 'Socios',
+        'cliente': 'Cliente',
+        'clientes': 'Clientes'
+    };
+    return roles[role?.toLowerCase()] || role || 'Usuario';
 }
 
 // Inicializar eventos

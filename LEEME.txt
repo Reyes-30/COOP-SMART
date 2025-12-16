@@ -1,0 +1,49 @@
+# 🚀 INICIO RÁPIDO - PRESENTACIÓN COOP-SMART
+
+## ⚡ PASOS RÁPIDOS:
+
+### 1. INICIAR SERVIDOR (PRIMERO)
+- Doble clic en **INICIAR-SERVIDOR.bat**
+- Esperar mensaje: "✅ Conexión a MySQL establecida"
+- **NO CERRAR** esta ventana
+
+### 2. ABRIR WEB
+- Doble clic en **ABRIR-WEB.bat**
+- Login: `admin` / `admin123`
+
+### 3. ABRIR MÓVIL  
+- Doble clic en **ABRIR-MOVIL.bat**
+- Login: `josue` / `123456`
+
+### 4. HACER TRANSFERENCIA EN MÓVIL
+- Ir a "Transferir"
+- Cuenta destino: `AH-010000`
+- Monto: `1000`
+- ¡Se verá en la web automáticamente!
+
+---
+
+## 📱 CREDENCIALES
+
+**WEB (Admin):**
+- Usuario: `admin`
+- Password: `admin123`
+
+**MÓVIL (Socio):**
+- Usuario: `josue`
+- Password: `123456`
+- Cuenta: `CA14162832446`
+- Saldo: `L 50,000.00`
+
+---
+
+## 💡 PARA DEMOSTRAR SINCRONIZACIÓN:
+
+1. Hacer transferencia en móvil → Cuenta: `AH-010000`
+2. Ir a "Transacciones" en la web
+3. ¡Ver la transferencia reflejada!
+4. Volver al móvil → Ver saldo actualizado
+
+---
+
+✅ **TODO LISTO PARA LA PRESENTACIÓN**

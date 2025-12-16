@@ -35,12 +35,43 @@ function checkAuth() {
     }
 }
 
+function cargarUsuario() {
+    try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            const userNameElements = document.querySelectorAll('#userName');
+            const userRoleElements = document.querySelectorAll('#userRole');
+            
+            userNameElements.forEach(el => el.textContent = user.nombre_completo || user.nombre_usuario || 'Usuario');
+            userRoleElements.forEach(el => el.textContent = translateRole(user.rol, user.genero));
+        }
+    } catch (error) {
+        console.error('Error al cargar usuario:', error);
+    }
+}
+
+function translateRole(role, genero) {
+    const roles = {
+        'administrador': 'Administrador',
+        'cajero': genero === 'femenino' ? 'Cajera' : 'Cajero',
+        'socio': 'Socio',
+        'socios': 'Socios',
+        'cliente': 'Cliente',
+        'clientes': 'Clientes'
+    };
+    return roles[role?.toLowerCase()] || role || 'Usuario';
+}
+
 // ===================================
 // Inicialización
 // ===================================
 document.addEventListener('DOMContentLoaded', () => {
     // Verificar autenticación
     checkAuth();
+    
+    // Cargar información del usuario
+    cargarUsuario();
     
     // Eventos de logout
     const logoutBtn = document.getElementById('logoutBtn');

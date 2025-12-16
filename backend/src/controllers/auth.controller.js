@@ -3,7 +3,7 @@
  */
 
 const jwt = require('jsonwebtoken');
-const { Usuario } = require('../models');
+const { Usuario, Socio } = require('../models');
 const { registrarLog } = require('../middlewares/logger');
 
 /**
@@ -11,7 +11,9 @@ const { registrarLog } = require('../middlewares/logger');
  */
 const login = async (req, res) => {
   try {
-    const { nombre_usuario, contrasena } = req.body;
+    // Aceptar tanto nombre_usuario/contrasena como usuario/password
+    const nombre_usuario = req.body.nombre_usuario || req.body.usuario;
+    const contrasena = req.body.contrasena || req.body.password;
 
     // Validar campos
     if (!nombre_usuario || !contrasena) {
@@ -47,12 +49,26 @@ const login = async (req, res) => {
       });
     }
 
+    // Buscar socio asociado por email (para app móvil)
+    let socioId = null;
+    let genero = null;
+    if (usuario.email) {
+      const socio = await Socio.findOne({
+        where: { email: usuario.email }
+      });
+      if (socio) {
+        socioId = socio.id;
+        genero = socio.genero;
+      }
+    }
+
     // Generar token JWT
     const token = jwt.sign(
       {
         id: usuario.id,
         nombre_usuario: usuario.nombre_usuario,
-        rol: usuario.rol
+        rol: usuario.rol,
+        socio_id: socioId
       },
       process.env.JWT_SECRET,
       {
@@ -74,7 +90,9 @@ const login = async (req, res) => {
         nombre_usuario: usuario.nombre_usuario,
         nombre_completo: usuario.nombre_completo,
         email: usuario.email,
-        rol: usuario.rol
+        rol: usuario.rol,
+        socio_id: socioId,
+        genero: genero
       }
     });
 
